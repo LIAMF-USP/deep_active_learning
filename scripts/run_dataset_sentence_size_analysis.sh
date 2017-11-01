@@ -3,11 +3,11 @@
 set -e
 
 #usage
-#./script/run_dataset_analysis.sh
+#./script/run_dataset_sentence_size_analysis.sh
 
 DATA_DIR="data/aclImdb"
 DATASET_TYPE="train"
 
-python dataset_analysis/movie_review_dataset_analysis.py \
+python dataset_analysis/movie_review_sentence_size.py \
     --data_dir=${DATA_DIR} \
     --dataset_type=${DATASET_TYPE}
