@@ -8,7 +8,8 @@ import matplotlib.pyplot as plt
 import matplotlib.mlab as mlab
 
 
-def create_graph(sentences_size, sentence_mean, sentence_std, sentence_type):
+def create_graph(sentences_size, sentence_mean, sentence_std, sentence_type,
+                 dataset_type):
     n, bins, patches = plt.hist(
         sentences_size, 200, normed=1, facecolor='green', alpha=0.75,
         histtype='bar', ec='black')
@@ -19,11 +20,11 @@ def create_graph(sentences_size, sentence_mean, sentence_std, sentence_type):
     plt.xlabel('Sentence Size')
     plt.ylabel('Probability')
     plt.title(
-        'Histogram of {0} Sentence Sizes\n u={1:.2f}, sigma={2:.2f}'.format(
-            sentence_type, sentence_mean, sentence_std))
+        'Histogram ({0} set) of {1} Sentence Sizes\n u={2:.2f}, sigma={3:.2f}'.format(
+             dataset_type, sentence_type, sentence_mean, sentence_std))
     plt.axis([20, 1000, 0, 0.007])
-    plt.savefig('dataset_analysis/{}_graph'.format(
-        sentence_type.lower()))
+    plt.savefig('dataset_analysis/{}_{}_graph'.format(
+        dataset_type, sentence_type.lower()))
     plt.close()
 
 
@@ -56,12 +57,12 @@ def perform_dataset_analysis(user_args):
     data_path = os.path.join(data_dir, dataset_type)
 
     pos_size, pos_mean, pos_std = average_sentence_size(data_path, 'pos')
-    print('Creating positive sentences graph...')
-    create_graph(pos_size, pos_mean, pos_std, 'Positive')
+    print('Creating {} set positive sentences graph...'.format(dataset_type))
+    create_graph(pos_size, pos_mean, pos_std, 'Positive', dataset_type)
 
     neg_size, neg_mean, neg_std = average_sentence_size(data_path, 'neg')
-    print('Creating negative sentences graph...')
-    create_graph(neg_size, neg_mean, neg_std, 'Negative')
+    print('Creating {} set negative sentences graph...'.format(dataset_type))
+    create_graph(neg_size, neg_mean, neg_std, 'Negative', dataset_type)
 
 
 def create_argument_parser():
