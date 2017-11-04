@@ -1,2 +1,6 @@
 data/*
 *.png
+*.pyc
+*.pyc
+.cache/*
+*/__pycache__/*
