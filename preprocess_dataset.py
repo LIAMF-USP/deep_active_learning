@@ -1,25 +1,11 @@
 import argparse
 import os
-import re
 
+from preprocessing.format_dataset import remove_html_from_text, to_lower
 from utils.progress_bar import Progbar
 
 
-def make_output_dir(output_dataset_path):
-    os.makedirs(output_dataset_path)
-
-    output_pos = os.path.join(output_dataset_path, 'pos')
-    os.makedirs(output_pos)
-
-    output_neg = os.path.join(output_dataset_path, 'neg')
-    os.makedirs(output_neg)
-
-
-def remove_html_from_text(review_text):
-    return re.sub(r'<br\s/><br\s/>', ' ', review_text)
-
-
-def remove_html_markup_from_dir(dataset_path, output_dataset_path, review_type):
+def preprocess_review_files(dataset_path, output_dataset_path, review_type):
     dataset_sentiment_type = os.path.join(dataset_path, review_type)
     output_sentiment_type = os.path.join(output_dataset_path, review_type)
 
@@ -33,6 +19,7 @@ def remove_html_markup_from_dir(dataset_path, output_dataset_path, review_type):
         original_review = os.path.join(dataset_sentiment_type, review)
         with open(original_review, 'r') as review_file:
             formatted_text = remove_html_from_text(review_file.read())
+            formatted_text = to_lower(formatted_text)
 
         output_review = os.path.join(output_sentiment_type, review)
         with open(output_review, 'w') as review_file:
@@ -42,12 +29,22 @@ def remove_html_markup_from_dir(dataset_path, output_dataset_path, review_type):
     print()
 
 
-def remove_html_markup(dataset_path, output_dataset_path):
-    remove_html_markup_from_dir(dataset_path, output_dataset_path, 'pos')
-    remove_html_markup_from_dir(dataset_path, output_dataset_path, 'neg')
+def preprocess_files(dataset_path, output_dataset_path):
+    preprocess_review_files(dataset_path, output_dataset_path, 'pos')
+    preprocess_review_files(dataset_path, output_dataset_path, 'neg')
 
 
-def format_dataset(user_args):
+def make_output_dir(output_dataset_path):
+    os.makedirs(output_dataset_path)
+
+    output_pos = os.path.join(output_dataset_path, 'pos')
+    os.makedirs(output_pos)
+
+    output_neg = os.path.join(output_dataset_path, 'neg')
+    os.makedirs(output_neg)
+
+
+def apply_data_preprocessing(user_args):
     data_dir = user_args['data_dir']
     dataset_type = user_args['dataset_type']
     output_dir = user_args['output_dir']
@@ -58,7 +55,7 @@ def format_dataset(user_args):
     if not os.path.exists(output_dataset_path):
         make_output_dir(output_dataset_path)
 
-    remove_html_markup(dataset_path, output_dataset_path)
+    preprocess_files(dataset_path, output_dataset_path)
 
 
 def create_argument_parser():
@@ -84,7 +81,7 @@ def main():
     parser = create_argument_parser()
     user_args = vars(parser.parse_args())
 
-    format_dataset(user_args)
+    apply_data_preprocessing(user_args)
 
 
 if __name__ == '__main__':

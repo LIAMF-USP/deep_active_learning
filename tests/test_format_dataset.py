@@ -1,6 +1,6 @@
 import unittest
 
-from format_dataset import remove_html_from_text
+from preprocessing.format_dataset import remove_html_from_text
 
 
 class FormatDatasetTest(unittest.TestCase):
