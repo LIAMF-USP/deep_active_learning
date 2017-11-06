@@ -43,12 +43,14 @@ class FormatDatasetTest(unittest.TestCase):
     def test_load_glove(self):
         glove_path = 'tests/test_data/glove_test_data.txt'
 
-        expected_word_index = {'a': 0, 'b': 1, 'c': 2}
+        expected_word_index = {'a': 1, 'b': 2, 'c': 3}
         expected_glove_matrix = [[0.1, 0.2, 0.3],
                                  [1, 2, 3],
                                  [4, 5, 6]]
+        expected_vocab = ['a', 'b', 'c']
 
-        actual_word_index, actual_glove_matrix = load_glove(glove_path)
+        actual_word_index, actual_glove_matrix, actual_vocab = load_glove(glove_path)
 
         self.assertEqual(expected_word_index, actual_word_index)
         self.assertEqual(expected_glove_matrix, actual_glove_matrix)
+        self.assertEqual(expected_vocab, actual_vocab)

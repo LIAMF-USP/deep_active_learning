@@ -7,14 +7,16 @@ WORD_POS = 0
 def load_glove(glove_path):
     word_index = dict()
     glove_matrix = []
+    vocab = []
 
     with open(glove_path, 'r') as glove_file:
         for index, glove_line in enumerate(glove_file.readlines()):
             glove_features = glove_line.split()
-            word_index[glove_features[WORD_POS]] = index
+            word_index[glove_features[WORD_POS]] = index + 1
+            vocab.append(glove_features[WORD_POS])
             glove_matrix.append([float(value) for value in glove_features[1:]])
 
-    return word_index, glove_matrix
+    return word_index, glove_matrix, vocab
 
 
 def remove_html_from_text(text):
