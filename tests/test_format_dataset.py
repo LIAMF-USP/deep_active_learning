@@ -32,3 +32,9 @@ class FormatDatasetTest(unittest.TestCase):
         actual_string2 = remove_special_characters_from_text(text_string2)
 
         self.assertEqual(expected_string2, actual_string2)
+
+        text_string3 = 'I love this movie ;-)'
+        expected_string3 = 'I love this movie ;-)'
+        actual_string3 = remove_special_characters_from_text(text_string3)
+
+        self.assertEqual(expected_string3, actual_string3)
