@@ -4,7 +4,7 @@ import re
 WORD_POS = 0
 
 
-def load_glove(glove_path):
+def load_glove(glove_path, progbar=None):
     word_index = dict()
     glove_matrix = []
     vocab = []
@@ -15,6 +15,9 @@ def load_glove(glove_path):
             word_index[glove_features[WORD_POS]] = index + 1
             vocab.append(glove_features[WORD_POS])
             glove_matrix.append([float(value) for value in glove_features[1:]])
+
+            if progbar:
+                progbar.update(index + 1, [])
 
     return word_index, glove_matrix, vocab
 
