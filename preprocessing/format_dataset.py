@@ -1,6 +1,22 @@
 import re
 
 
+WORD_POS = 0
+
+
+def load_glove(glove_path):
+    word_index = dict()
+    glove_matrix = []
+
+    with open(glove_path, 'r') as glove_file:
+        for index, glove_line in enumerate(glove_file.readlines()):
+            glove_features = glove_line.split()
+            word_index[glove_features[WORD_POS]] = index
+            glove_matrix.append([float(value) for value in glove_features[1:]])
+
+    return word_index, glove_matrix
+
+
 def remove_html_from_text(text):
     return re.sub(r'<br\s/><br\s/>', ' ', text)
 

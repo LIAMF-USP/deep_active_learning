@@ -1,7 +1,8 @@
 import unittest
 
 from preprocessing.format_dataset import (remove_html_from_text,
-                                          remove_special_characters_from_text)
+                                          remove_special_characters_from_text,
+                                          load_glove)
 
 
 class FormatDatasetTest(unittest.TestCase):
@@ -38,3 +39,16 @@ class FormatDatasetTest(unittest.TestCase):
         actual_string3 = remove_special_characters_from_text(text_string3)
 
         self.assertEqual(expected_string3, actual_string3)
+
+    def test_load_glove(self):
+        glove_path = 'tests/test_data/glove_test_data.txt'
+
+        expected_word_index = {'a': 0, 'b': 1, 'c': 2}
+        expected_glove_matrix = [[0.1, 0.2, 0.3],
+                                 [1, 2, 3],
+                                 [4, 5, 6]]
+
+        actual_word_index, actual_glove_matrix = load_glove(glove_path)
+
+        self.assertEqual(expected_word_index, actual_word_index)
+        self.assertEqual(expected_glove_matrix, actual_glove_matrix)
