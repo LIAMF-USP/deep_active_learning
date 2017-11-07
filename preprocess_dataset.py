@@ -1,9 +1,13 @@
 import argparse
 import os
-import subprocess
+
+import numpy as np
 
 from preprocessing.format_dataset import (remove_html_from_text,
                                           remove_special_characters_from_text,
+                                          add_space_between_characters,
+                                          sentence_to_id_list,
+                                          create_vocab_parser,
                                           load_glove,
                                           to_lower)
 from utils.progress_bar import Progbar
@@ -11,7 +15,8 @@ from utils.progress_bar import Progbar
 
 def preprocess_review_text(review_text):
     formatted_text = remove_html_from_text(review_text)
-    formatted_text = remove_special_characters_from_text(review_text)
+    formatted_text = add_space_between_characters(formatted_text)
+    formatted_text = remove_special_characters_from_text(formatted_text)
     return to_lower(formatted_text)
 
 
@@ -75,21 +80,51 @@ def apply_data_preprocessing(user_args):
     return preprocess_files(dataset_path, output_dataset_path)
 
 
-def count_file_lines(text_path):
-    # TO DO: Refactor this function
-    count_line = subprocess.check_output(['wc', '-l', text_path])
-    return int(count_line.decode('utf-8').split()[0])
+def transform_sentences(vocabulary_processor, movie_reviews):
+    for review in movie_reviews:
+        yield sentence_to_id_list(review, vocabulary_processor)
+
+
+def save_sentences_id_list(dataset_path, sentence_type, sentences_id_list,
+                           num_sentences):
+    sentences_type_path = os.path.join(dataset_path, sentence_type)
+    filename = '{}_sentences_id_list.txt'.format(sentence_type)
+    sentences_id_path = os.path.join(sentences_type_path, filename)
+
+    progbar = Progbar(target=num_sentences)
+
+    with open(sentences_id_path, 'wb') as sentences_file:
+        for index, review in enumerate(sentences_id_list):
+            review = list(review)[0]
+            review = review.reshape(1, review.shape[0])
+            np.savetxt(sentences_file, review, fmt='%u', delimiter=' ',
+                       newline='\n', header='', footer='', comments='# ')
+
+            progbar.update(index + 1, [])
 
 
 def transform_data(pos_reviews, neg_reviews, user_args):
     glove_file = user_args['glove_file']
+    sentence_size = user_args['sentence_size']
+    data_dir = user_args['output_dir']
+    dataset_type = user_args['dataset_type']
 
-    file_size = count_file_lines(glove_file)
-    progbar = Progbar(target=file_size)
-    progbar = None
+    print('Loading glove embeddings')
+    word_index, glove_matrix, vocab = load_glove(glove_file)
 
-    print('Loading glove models')
-    word_index, glove_matrix, vocab = load_glove(glove_file, progbar)
+    print('Creating Vocabulary Parser')
+    vocabulary_processor = create_vocab_parser(vocab, sentence_size)
+    print()
+
+    dataset_path = os.path.join(data_dir, dataset_type)
+    pos_sentences_id_list = transform_sentences(vocabulary_processor, pos_reviews)
+    print('Saving positive sentences id lists')
+    save_sentences_id_list(dataset_path, 'pos', pos_sentences_id_list, len(pos_reviews))
+    print()
+
+    neg_sentences_id_list = transform_sentences(vocabulary_processor, neg_reviews)
+    print('Saving negative sentences id lists')
+    save_sentences_id_list(dataset_path, 'neg', neg_sentences_id_list, len(neg_reviews))
 
 
 def create_argument_parser():
