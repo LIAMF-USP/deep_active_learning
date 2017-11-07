@@ -4,6 +4,7 @@ from preprocessing.format_dataset import (remove_html_from_text,
                                           remove_special_characters_from_text,
                                           add_space_between_characters,
                                           create_vocab_parser,
+                                          sentence_to_id_list,
                                           to_lower,
                                           load_glove)
 
@@ -145,3 +146,32 @@ class FormatDatasetTest(unittest.TestCase):
 
         self.assertEqual(vp_size, vocab_size + 1)
     test_create_vocab_parser.slow = 1
+
+    def test_sentence_to_id_list(self):
+        sentence_size = 10
+        word_index, glove_matrix, vocab = load_glove('data/glove.6B.50d.txt')
+        vocabulary_processor = create_vocab_parser(vocab, sentence_size)
+
+        sentence = 'i love you'
+        parsed_sentence = sentence.split()
+        id_sentence = list(sentence_to_id_list(sentence, vocabulary_processor))[0]
+
+        self.assertEqual(len(id_sentence), sentence_size)
+
+        for index, value in enumerate(parsed_sentence):
+            self.assertEqual(word_index[parsed_sentence[index]], id_sentence[index])
+
+        sentence_size = 250
+        vocabulary_processor = create_vocab_parser(vocab, sentence_size)
+
+        with open('tests/test_data/example_movie_review.txt', 'r') as sentence_file:
+            sentence = sentence_file.read()
+
+        id_sentence = list(sentence_to_id_list(sentence, vocabulary_processor))[0]
+        parsed_sentence = sentence.split()
+
+        self.assertEqual(len(id_sentence), sentence_size)
+
+        for index, value in enumerate(parsed_sentence):
+            self.assertEqual(word_index[parsed_sentence[index]], id_sentence[index])
+    test_sentence_to_id_list.slow = 1

@@ -6,6 +6,13 @@ import tensorflow as tf
 WORD_POS = 0
 
 
+def sentence_to_id_list(sentence, vocabulary_processor):
+    if type(sentence) is not list:
+        sentence = [sentence]
+
+    return vocabulary_processor.transform(sentence)
+
+
 def create_vocab_parser(vocab, sentence_size):
     """
     The tensorflow method has a default tokenizer that
