@@ -3,6 +3,7 @@ import unittest
 from preprocessing.format_dataset import (remove_html_from_text,
                                           remove_special_characters_from_text,
                                           add_space_between_characters,
+                                          create_vocab_parser,
                                           to_lower,
                                           load_glove)
 
@@ -134,3 +135,13 @@ class FormatDatasetTest(unittest.TestCase):
         self.assertEqual(expected_word_index, actual_word_index)
         self.assertEqual(expected_glove_matrix, actual_glove_matrix)
         self.assertEqual(expected_vocab, actual_vocab)
+
+    def test_create_vocab_parser(self):
+        word_index, glove_matrix, vocab = load_glove('data/glove.6B.50d.txt')
+        vocabulary_processor = create_vocab_parser(vocab, 10)
+
+        vp_size = len(vocabulary_processor.vocabulary_._mapping.keys())
+        vocab_size = len(vocab)
+
+        self.assertEqual(vp_size, vocab_size + 1)
+    test_create_vocab_parser.slow = 1

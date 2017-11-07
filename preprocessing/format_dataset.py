@@ -12,12 +12,15 @@ def create_vocab_parser(vocab, sentence_size):
     removes some word from the glove vocab files, this function
     guarantees that no word is removed from it.
     """
-    def tokenizer(text):
+    def tokenizer2(text):
         for value in text:
             yield value.split()
 
-    return tf.contrib.learn.preprocessing.VocabularyParser(
-        max_line_length=sentence_size, tokenizer_fn=tokenizer)
+    vocabulary_processor = tf.contrib.learn.preprocessing.VocabularyProcessor(
+        max_document_length=sentence_size, tokenizer_fn=tokenizer2)
+    vocabulary_processor.fit(vocab)
+
+    return vocabulary_processor
 
 
 def load_glove(glove_path, progbar=None):
