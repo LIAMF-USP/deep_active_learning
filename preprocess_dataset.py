@@ -8,6 +8,7 @@ from preprocessing.format_dataset import (remove_html_from_text,
                                           add_space_between_characters,
                                           sentence_to_id_list,
                                           create_vocab_parser,
+                                          SentenceTFRecord,
                                           load_glove,
                                           to_lower)
 from utils.progress_bar import Progbar
@@ -120,11 +121,20 @@ def transform_data(pos_reviews, neg_reviews, user_args):
     pos_sentences_id_list = transform_sentences(vocabulary_processor, pos_reviews)
     print('Saving positive sentences id lists')
     save_sentences_id_list(dataset_path, 'pos', pos_sentences_id_list, len(pos_reviews))
-    print()
 
     neg_sentences_id_list = transform_sentences(vocabulary_processor, neg_reviews)
     print('Saving negative sentences id lists')
     save_sentences_id_list(dataset_path, 'neg', neg_sentences_id_list, len(neg_reviews))
+    print()
+
+
+def create_tf_record(sentences_id_path, output_path, label):
+    label_str = 'pos' if label== 0 else 'neg'
+    print('Creating {} TFRecords'.format(label_str))
+
+    progbar = Progbar(target=0)
+    sentence_tfrecord = SentenceTFRecord(sentences_id_path, output_path, label, progbar)
+    sentence_tfrecord.parse_file()
 
 
 def create_argument_parser():
@@ -163,6 +173,17 @@ def main():
 
     pos_reviews, neg_reviews = apply_data_preprocessing(user_args)
     transform_data(pos_reviews, neg_reviews, user_args)
+
+    output_dir = user_args['output_dir']
+    dataset_type = user_args['dataset_type']
+
+    output_path = os.path.join(output_dir, dataset_type, 'pos', 'pos.tfrecord')
+    sentences_id_path = os.path.join(output_dir, dataset_type, 'pos', 'pos_sentences_id_list.txt')
+    create_tf_record(sentences_id_path, output_path, 0)
+
+    output_path = os.path.join(output_dir, dataset_type, 'neg', 'neg.tfrecord')
+    sentences_id_path = os.path.join(output_dir, dataset_type, 'neg', 'neg_sentences_id_list.txt')
+    create_tf_record(sentences_id_path, output_path, 1)
 
 
 if __name__ == '__main__':

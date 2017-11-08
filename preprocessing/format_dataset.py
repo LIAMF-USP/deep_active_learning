@@ -6,6 +6,49 @@ import tensorflow as tf
 WORD_POS = 0
 
 
+class SentenceTFRecord():
+
+    def __init__(self, sentence_id_path, output_path, label, progbar=None):
+        self.sentences_id_path = sentence_id_path
+        self.output_path = output_path
+        self.label = label
+        self.progbar = progbar
+
+    def parse_file(self):
+        with open(self.sentences_id_path, 'rb') as sentence_file:
+            writer = tf.python_io.TFRecordWriter(self.output_path)
+
+            sentence_lines = sentence_file.readlines()
+
+            if self.progbar:
+                self.progbar.target = len(sentence_lines)
+
+            for index, sentence in enumerate(sentence_lines):
+                sentence_array = sentence.split()
+                example = self.make_example(sentence_array, self.label)
+
+                writer.write(example.SerializeToString())
+
+                if self.progbar:
+                    self.progbar.update(index + 1, [])
+
+            writer.close()
+
+    def make_example(self, sentence, label):
+        example = tf.train.SequenceExample()
+
+        sentence_size = len(sentence)
+        example.context.feature['size'].int64_list.value.append(sentence_size)
+        example.context.feature['label'].int64_list.value.append(label)
+
+        sentence_tokens = example.feature_lists.feature_list['tokens']
+
+        for token in sentence:
+            sentence_tokens.feature.add().int64_list.value.append(int(token))
+
+        return example
+
+
 def sentence_to_id_list(sentence, vocabulary_processor):
     if type(sentence) is not list:
         sentence = [sentence]
