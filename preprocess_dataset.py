@@ -1,4 +1,5 @@
 import argparse
+import random
 import os
 
 import numpy as np
@@ -129,12 +130,38 @@ def transform_data(pos_reviews, neg_reviews, user_args):
 
 
 def create_tf_record(sentences_id_path, output_path, label):
-    label_str = 'pos' if label== 0 else 'neg'
+    label_str = 'pos' if label == 0 else 'neg'
     print('Creating {} TFRecords'.format(label_str))
 
     progbar = Progbar(target=0)
     sentence_tfrecord = SentenceTFRecord(sentences_id_path, output_path, label, progbar)
     sentence_tfrecord.parse_file()
+
+
+def create_validation_set(pos_reviews, neg_reviews, percent=0.1):
+    num_pos = int(len(pos_reviews) * percent)
+    num_neg = int(len(neg_reviews) * percent)
+
+    random.shuffle(pos_reviews)
+    random.shuffle(neg_reviews)
+
+    validation_pos = pos_reviews[0:num_pos]
+    validation_neg = neg_reviews[0:num_neg]
+
+    pos_reviews = pos_reviews[num_pos:]
+    neg_reviews = neg_reviews[num_neg:]
+
+    return pos_reviews, neg_reviews, validation_pos, validation_neg
+
+
+def create_validation_dir(user_args):
+    output_dir = user_args['output_dir']
+    validation_dir = 'val'
+
+    validation_path = os.path.join(output_dir, validation_dir)
+
+    if not os.path.exists(validation_path):
+        os.makedirs(validation_path)
 
 
 def create_argument_parser():
