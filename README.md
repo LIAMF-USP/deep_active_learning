@@ -1,5 +1,8 @@
 # Deep Active Learning
 
+[![Build Status](https://travis-ci.org/LIAMF-USP/deep_active_learning.svg?branch=master)](https://travis-ci.org/LIAMF-USP/deep_active_learning)
+[![License](https://img.shields.io/github/license/mashape/apistatus.svg?maxAge=2592000)](https://github.com/LIAMF-USP/deep_active_learning/blob/master/LICENSE)
+
 This respository will contain the code for the master's thesis "Deep Active
 Learning for Sentiment Analysis". It will store not only the Deep Learning
 models created, but also both experiments and dataset analysis code.
@@ -29,5 +32,4 @@ This script will perform the following steps:
 * Turn the reviews into a list of ids (Every id represent the row associated with the word in the GloVe matrix) 
 * Save the reviews into TFRecord format
 
-This steps are also applied for the test data, but without the validation set
-part.
+This steps are also applied for the test data, but without the validation set part.
