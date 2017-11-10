@@ -105,12 +105,7 @@ def save_sentences_id_list(dataset_path, sentence_type, sentences_id_list,
             progbar.update(index + 1, [])
 
 
-def transform_data(pos_reviews, neg_reviews, user_args):
-    glove_file = user_args['glove_file']
-    sentence_size = user_args['sentence_size']
-    data_dir = user_args['output_dir']
-    dataset_type = user_args['dataset_type']
-
+def create_vocabulary_processor(glove_file, sentence_size):
     print('Loading glove embeddings')
     word_index, glove_matrix, vocab = load_glove(glove_file)
 
@@ -118,21 +113,41 @@ def transform_data(pos_reviews, neg_reviews, user_args):
     vocabulary_processor = create_vocab_parser(vocab, sentence_size)
     print()
 
-    dataset_path = os.path.join(data_dir, dataset_type)
-    pos_sentences_id_list = transform_sentences(vocabulary_processor, pos_reviews)
-    print('Saving positive sentences id lists')
-    save_sentences_id_list(dataset_path, 'pos', pos_sentences_id_list, len(pos_reviews))
+    return vocabulary_processor
 
-    neg_sentences_id_list = transform_sentences(vocabulary_processor, neg_reviews)
-    print('Saving negative sentences id lists')
-    save_sentences_id_list(dataset_path, 'neg', neg_sentences_id_list, len(neg_reviews))
-    print()
+
+def label_to_str(label):
+    return 'pos' if label == 0 else 'neg'
+
+
+def transform_all_data(reviews_list, labels_list, dataset_type_list,
+                       vocabulary_processor, data_dir):
+    for reviews, label, dataset_type in zip(reviews_list, labels_list, dataset_type_list):
+        transform_data(reviews, label, dataset_type, vocabulary_processor, data_dir)
+
+
+def transform_data(reviews, label, dataset_type, vocabulary_processor, data_dir):
+    dataset_path = os.path.join(data_dir, dataset_type)
+    label_str = label_to_str(label)
+    print('Saving {} sentences id lists into {} dir'.format(label_str, dataset_type))
+
+    sentences_id_list = transform_sentences(vocabulary_processor, reviews)
+    save_sentences_id_list(dataset_path, label_str, sentences_id_list, len(reviews))
+
+
+def create_all_tfrecords(dataset_types, labels, data_dir):
+    for dataset_type, label in zip(dataset_types, labels):
+        label_str = label_to_str(label)
+        print('Creating {} TFRecords into {}/{}'.format(label_str, dataset_type, label_str))
+
+        output_path = os.path.join(data_dir, dataset_type,
+                                   label_str, '{}.tfrecord'.format(label_str))
+        sentences_id_path = os.path.join(data_dir, dataset_type, label_str,
+                                         '{}_sentences_id_list.txt'.format(label_str))
+        create_tf_record(sentences_id_path, output_path, label)
 
 
 def create_tf_record(sentences_id_path, output_path, label):
-    label_str = 'pos' if label == 0 else 'neg'
-    print('Creating {} TFRecords'.format(label_str))
-
     progbar = Progbar(target=0)
     sentence_tfrecord = SentenceTFRecord(sentences_id_path, output_path, label, progbar)
     sentence_tfrecord.parse_file()
@@ -158,10 +173,14 @@ def create_validation_dir(user_args):
     output_dir = user_args['output_dir']
     validation_dir = 'val'
 
-    validation_path = os.path.join(output_dir, validation_dir)
+    validation_pos_path = os.path.join(output_dir, validation_dir, 'pos')
+    validation_neg_path = os.path.join(output_dir, validation_dir, 'neg')
 
-    if not os.path.exists(validation_path):
-        os.makedirs(validation_path)
+    if not os.path.exists(validation_pos_path):
+        os.makedirs(validation_pos_path)
+
+    if not os.path.exists(validation_neg_path):
+        os.makedirs(validation_neg_path)
 
 
 def create_argument_parser():
@@ -198,19 +217,34 @@ def main():
     parser = create_argument_parser()
     user_args = vars(parser.parse_args())
 
-    pos_reviews, neg_reviews = apply_data_preprocessing(user_args)
-    transform_data(pos_reviews, neg_reviews, user_args)
-
-    output_dir = user_args['output_dir']
     dataset_type = user_args['dataset_type']
+    output_dir = user_args['output_dir']
+    is_test = False if dataset_type == 'train' else True
 
-    output_path = os.path.join(output_dir, dataset_type, 'pos', 'pos.tfrecord')
-    sentences_id_path = os.path.join(output_dir, dataset_type, 'pos', 'pos_sentences_id_list.txt')
-    create_tf_record(sentences_id_path, output_path, 0)
+    pos_reviews, neg_reviews = apply_data_preprocessing(user_args)
 
-    output_path = os.path.join(output_dir, dataset_type, 'neg', 'neg.tfrecord')
-    sentences_id_path = os.path.join(output_dir, dataset_type, 'neg', 'neg_sentences_id_list.txt')
-    create_tf_record(sentences_id_path, output_path, 1)
+    if not is_test:
+        pos_reviews, neg_reviews, validation_pos, validation_neg = create_validation_set(
+            pos_reviews, neg_reviews)
+        print('Creating validation set')
+        create_validation_dir(user_args)
+
+    glove_file = user_args['glove_file']
+    sentence_size = user_args['sentence_size']
+    vocabulary_processor = create_vocabulary_processor(glove_file, sentence_size)
+
+    if not is_test:
+        reviews = [pos_reviews, neg_reviews, validation_pos, validation_neg]
+        labels = [0, 1, 0, 1]
+        dataset_types = [dataset_type, dataset_type, 'val', 'val']
+    else:
+        reviews = [pos_reviews, neg_reviews]
+        labels = [0, 1]
+        dataset_types = [dataset_type, dataset_type]
+
+    transform_all_data(reviews, labels, dataset_types, vocabulary_processor, output_dir)
+    print()
+    create_all_tfrecords(dataset_types, labels, output_dir)
 
 
 if __name__ == '__main__':
