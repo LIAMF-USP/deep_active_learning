@@ -1,30 +1,76 @@
 import tensorflow as tf
 
 
-def parser(tfrecord):
-    context_features = {
-        'size': tf.FixedLenFeature([], dtype=tf.int64),
-        'label': tf.FixedLenFeature([], dtype=tf.int64)
-    }
-    sequence_features = {
-        'tokens': tf.FixedLenSequenceFeature([], dtype=tf.int64)
-    }
+class InputPipeline:
 
-    tfrecord_parsed = tf.parse_single_sequence_example(
-        tfrecord, context_features, sequence_features)
+    def __init__(self, train_files, validation_files,
+                 test_files, batch_size, perform_shuffle):
+        self.train_files = train_files
+        self.validation_files = validation_files
+        self.test_files = test_files
+        self.batch_size = batch_size
+        self.perform_shuffle = perform_shuffle
 
-    tokens = tfrecord_parsed[1]['tokens']
-    label = tfrecord_parsed[0]['label']
+        self._train_iterator_op = None
+        self._validation_iterator_op = None
+        self._test_iterator_op = None
 
-    return tokens, label
+    @property
+    def train_iterator(self):
+        return self._train_iterator_op
 
+    @property
+    def validation_iterator(self):
+        return self._validation_iterator_op
 
-def input_pipeline(tfrecord_files, batch_size, perform_shuffle, num_epochs=1):
-    dataset = tf.data.TFRecordDataset(tfrecord_files).map(parser)
-    dataset = dataset.repeat(num_epochs)
-    dataset = dataset.batch(batch_size)
+    @property
+    def test_iterator(self):
+        return self._test_iterator_op
 
-    iterator = dataset.make_one_shot_iterator()
-    batch_tokens, batch_labels = iterator.get_next()
+    def parser(self, tfrecord):
+        context_features = {
+            'size': tf.FixedLenFeature([], dtype=tf.int64),
+            'label': tf.FixedLenFeature([], dtype=tf.int64)
+        }
+        sequence_features = {
+            'tokens': tf.FixedLenSequenceFeature([], dtype=tf.int64)
+        }
 
-    return batch_tokens, batch_labels
+        tfrecord_parsed = tf.parse_single_sequence_example(
+            tfrecord, context_features, sequence_features)
+
+        tokens = tfrecord_parsed[1]['tokens']
+        label = tfrecord_parsed[0]['label']
+
+        return tokens, label
+
+    def create_datasets(self):
+        train_dataset = tf.data.TFRecordDataset(self.train_files).map(self.parser)
+        validation_dataset = tf.data.TFRecordDataset(self.validation_files).map(self.parser)
+        test_dataset = tf.data.TFRecordDataset(self.test_files).map(self.parser)
+
+        if self.perform_shuffle:
+            train_dataset.shuffle(buffer_size=10000)
+            validation_dataset.shuffle(buffer_size=10000)
+            test_dataset.shuffle(buffer_size=10000)
+
+        self.train_dataset = train_dataset.batch(self.batch_size)
+        self.validation_dataset = validation_dataset.batch(self.batch_size)
+        self.test_dataset = test_dataset.batch(self.batch_size)
+
+    def create_iterator(self):
+        self._iterator = tf.data.Iterator.from_structure(
+            self.train_dataset.output_types, self.train_dataset.output_shapes)
+
+        self._batch_tokens, self._batch_labels = self._iterator.get_next()
+
+        self._train_iterator_op = self._iterator.make_initializer(self.train_dataset)
+        self._validation_iterator_op = self._iterator.make_initializer(self.validation_dataset)
+        self._test_iterator_op = self._iterator.make_initializer(self.test_dataset)
+
+    def build_pipeline(self):
+        self.create_datasets()
+        self.create_iterator()
+
+    def get_batch(self):
+        return self._batch_tokens, self._batch_labels
