@@ -4,5 +4,6 @@ python:
   - "3.6"
 install:
   - pip3 install -r requirements.txt
-script: ./scripts/run_tests.sh
-
+script: 
+  - ./scripts/run_tests.sh
+  - flake8 .
