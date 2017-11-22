@@ -24,11 +24,9 @@ class SentimentAnalysisModel(Model):
     Implements basic functionalities for Sentiment Analysis Task.
     """
 
-    def __init__(self, config):
+    def __init__(self, config, verbose=False):
         self.config = config
-
-    def preprocess_sequence_data(self, examples):
-        raise NotImplementedError()
+        self.verbose = verbose
 
     def evaluate(self, dataset):
         """
@@ -62,9 +60,37 @@ class SentimentAnalysisModel(Model):
                 return tf.divide(accuracy, total)
 
     def run_epoch(self, sess, dataset):
+        if self.verbose:
+            i = 0
+
         while True:
             try:
                 batch_data, batch_labels = dataset.get_batch()
-                loss = self.train_on_batch(sess, batch_data, batch_labels)  # noqa
+                loss = self.train_on_batch(sess, batch_data, batch_labels)
+
+                if self.verbose:
+                    i += 1
+
+                    if i % 100 == 0:
+                        print('Loss: {0.:2f}'.format(loss))
+
             except tf.errors.OutOfRangeError:
                 break
+
+    def fit(self, sess, dataset):
+        best_score = 0
+
+        for epoch in range(self.config.num_epochs):
+            print('Running epoch {}'.format(epoch))
+            sess.run(dataset.train_iterator)
+            self.run_epoch(self, sess, dataset)
+
+            sess.run(dataset.validation_iterator)
+            accuracy = sess.run(self.evaluate(self, dataset))
+
+            print('Accuracy for epoch {}: {.2f}'.format(epoch, accuracy))
+
+            if accuracy > best_score:
+                best_score = accuracy
+
+        return best_score
