@@ -124,21 +124,24 @@ class FormatDatasetTest(unittest.TestCase):
 
     def test_load_glove(self):
         glove_path = 'tests/test_data/glove_test_data.txt'
+        embed_size = 3
 
         expected_word_index = {'a': 1, 'b': 2, 'c': 3}
-        expected_glove_matrix = [[0.1, 0.2, 0.3],
+        expected_glove_matrix = [[0, 0, 0],
+                                 [0.1, 0.2, 0.3],
                                  [1, 2, 3],
                                  [4, 5, 6]]
         expected_vocab = ['a', 'b', 'c']
 
-        actual_word_index, actual_glove_matrix, actual_vocab = load_glove(glove_path)
+        actual_word_index, actual_glove_matrix, actual_vocab = load_glove(glove_path, embed_size)
 
         self.assertEqual(expected_word_index, actual_word_index)
         self.assertEqual(expected_glove_matrix, actual_glove_matrix)
         self.assertEqual(expected_vocab, actual_vocab)
 
     def test_create_vocab_parser(self):
-        word_index, glove_matrix, vocab = load_glove('data/glove.6B.50d.txt')
+        embed_size = 50
+        word_index, glove_matrix, vocab = load_glove('data/glove.6B.50d.txt', embed_size)
         vocabulary_processor = create_vocab_parser(vocab, 10)
 
         vp_size = len(vocabulary_processor.vocabulary_._mapping.keys())
@@ -149,7 +152,8 @@ class FormatDatasetTest(unittest.TestCase):
 
     def test_sentence_to_id_list(self):
         sentence_size = 10
-        word_index, glove_matrix, vocab = load_glove('data/glove.6B.50d.txt')
+        embed_size = 50
+        word_index, glove_matrix, vocab = load_glove('data/glove.6B.50d.txt', embed_size)
         vocabulary_processor = create_vocab_parser(vocab, sentence_size)
 
         sentence = 'i love you'

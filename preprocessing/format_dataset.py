@@ -73,10 +73,13 @@ def create_vocab_parser(vocab, sentence_size):
     return vocabulary_processor
 
 
-def load_glove(glove_path, progbar=None):
+def load_glove(glove_path, embed_size, progbar=None):
     word_index = dict()
     glove_matrix = []
     vocab = []
+
+    # Add an zero row on our glove matrix for padding purposes
+    glove_matrix.append([float(0) for _ in range(embed_size)])
 
     with open(glove_path, 'r') as glove_file:
         for index, glove_line in enumerate(glove_file.readlines()):

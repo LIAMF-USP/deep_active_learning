@@ -105,9 +105,9 @@ def save_sentences_id_list(dataset_path, sentence_type, sentences_id_list,
             progbar.update(index + 1, [])
 
 
-def create_vocabulary_processor(glove_file, sentence_size):
+def create_vocabulary_processor(glove_file, embed_size, sentence_size):
     print('Loading glove embeddings')
-    word_index, glove_matrix, vocab = load_glove(glove_file)
+    word_index, glove_matrix, vocab = load_glove(glove_file, embed_size)
 
     print('Creating Vocabulary Parser')
     vocabulary_processor = create_vocab_parser(vocab, sentence_size)
@@ -198,6 +198,10 @@ def create_argument_parser():
                         '--glove-file',
                         type=str,
                         help='The location of the GloVe file')
+    parser.add_argument('-es',
+                        '--embed-size',
+                        type=int,
+                        help='The embedding size of the GloVe file')
     parser.add_argument('-s',
                         '--sentence-size',
                         type=int,
@@ -231,7 +235,8 @@ def main():
 
     glove_file = user_args['glove_file']
     sentence_size = user_args['sentence_size']
-    vocabulary_processor = create_vocabulary_processor(glove_file, sentence_size)
+    embed_size = user_args['embed_size']
+    vocabulary_processor = create_vocabulary_processor(glove_file, embed_size, sentence_size)
 
     if not is_test:
         reviews = [pos_reviews, neg_reviews, validation_pos, validation_neg]
