@@ -1,17 +1,14 @@
-import unittest
-
 import numpy as np
 import tensorflow as tf
 
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock, PropertyMock
 
 from model.sentiment_analysis_model import SentimentAnalysisModel
 
 
-class SentimentAnalysisModelTest(unittest.TestCase):
+class SentimentAnalysisModelTest(tf.test.TestCase):
 
-    @patch('model.model.Model.predict_on_batch')
-    def test_evaluate(self, predict_mock):
+    def test_evaluate(self):
         labels_values = [
                 (None, np.array([0, 1])),
                 (None, np.array([1, 1])),
@@ -26,11 +23,11 @@ class SentimentAnalysisModelTest(unittest.TestCase):
                 np.array([[0.2, 0.8], [0.7, 0.3]]),
                 np.array([[0.2, 0.8]])]
 
-        predict_mock.side_effect = prediction_values
-
         sentiment_model = SentimentAnalysisModel(None)
+        type(sentiment_model).pred = PropertyMock(side_effect=prediction_values)
 
         expected_accuracy = 0.4
-        actual_accuracy = sentiment_model.evaluate(None, dataset_mock)
 
-        self.assertEqual(expected_accuracy, actual_accuracy)
+        with self.test_session():
+            actual_accuracy = sentiment_model.evaluate(dataset_mock)
+            self.assertAlmostEqual(expected_accuracy, actual_accuracy.eval())

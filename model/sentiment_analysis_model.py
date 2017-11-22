@@ -1,4 +1,3 @@
-import numpy as np
 import tensorflow as tf
 
 from model.model import Model
@@ -31,7 +30,7 @@ class SentimentAnalysisModel(Model):
     def preprocess_sequence_data(self, examples):
         raise NotImplementedError()
 
-    def evaluate(self, sess, dataset):
+    def evaluate(self, dataset):
         """
         This method will be used to calculate the accuracy metric over
         a batch of examples from the validation or test set.
@@ -51,13 +50,16 @@ class SentimentAnalysisModel(Model):
         while True:
             try:
                 batch_data, batch_labels = dataset.get_batch()
-                predictions = np.argmax(self.predict_on_batch(sess, batch_data), axis=1)
-                weight = predictions.shape[0]
+                self.add_data_op(batch_data)
 
-                accuracy += np.mean(np.equal(predictions, batch_labels)) * weight
+                predictions = tf.argmax(self.pred, axis=1)
+                weight = tf.cast(tf.shape(predictions)[0], tf.float32)
+                correct_pred = tf.equal(predictions, batch_labels)
+
+                accuracy += tf.reduce_mean(tf.cast(correct_pred, tf.float32)) * weight
                 total += weight
             except tf.errors.OutOfRangeError:
-                return accuracy / total
+                return tf.divide(accuracy, total)
 
     def run_epoch(self, sess, dataset):
         while True:
