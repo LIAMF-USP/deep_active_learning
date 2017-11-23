@@ -1,6 +1,8 @@
 import tensorflow as tf
 import numpy as np
 
+from collections import namedtuple
+
 from model.lstm_model import LSTMModel, sequence_length
 
 
@@ -13,10 +15,13 @@ class LSTMModelTest(tf.test.TestCase):
                       [7, 8, 9],
                       [10, 11, 12]]
 
-        lstm_model = LSTMModel(None, embeddings)
+        Config = namedtuple('Config', ['max_length', 'num_units', 'num_classes'])
+        config = Config(3, 3, 2)
+
+        lstm_model = LSTMModel(config, embeddings)
 
         x_hat = np.array([[1, 2, 3], [3, 2, 0], [4, 0, 0]])
-        lstm_model.batch_data = x_hat
+        lstm_model.data_placeholder = x_hat
 
         expected_embedding = np.array([[[1, 2, 3], [4, 5, 6], [7, 8, 9]],
                                        [[7, 8, 9], [4, 5, 6], [0, 0, 0]],
@@ -44,10 +49,13 @@ class LSTMModelTest(tf.test.TestCase):
                       [7, 8, 9],
                       [10, 11, 12]]
 
-        lstm_model = LSTMModel(None, embeddings)
+        Config = namedtuple('Config', ['max_length', 'num_units', 'num_classes'])
+        config = Config(3, 3, 2)
+
+        lstm_model = LSTMModel(config, embeddings)
 
         x_hat = np.array([[1, 2, 3], [3, 2, 0], [4, 0, 0]])
-        lstm_model.batch_data = x_hat
+        lstm_model.data_placeholder = x_hat
 
         embedding_data = lstm_model.add_embedding()
 

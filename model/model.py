@@ -5,19 +5,22 @@ class Model:
     This base class assumes that the Dataset API is being used
     to handle data, since no placeholders are being used.
     """
-    def add_data_op(self, batch_data, batch_labels=None):
-        """
-        Method responsible for handling the batch data.
 
-        Args:
-            batch_data: A tensor with shape (batch_size, num_features)
-            batch_labels: A tensor with shape (batch_size, num_classes)
-                          This argument can be None since it will not
-                          be used to generate predictions, only to train
-                          the model.
+    def __init__(self):
+        self.batch_data = None
+        self.batch_labels = None
+
+    def add_placeholder(self):
         """
-        self.batch_data = batch_data
-        self.batch_labels = batch_labels
+        Add placeholder variables to tensorflow computational graph.
+        """
+        raise NotImplementedError()
+
+    def create_feed_dict(self, data_batch, labels_batch=None):
+        """
+        Create the feed dict for one step of training.
+        """
+        raise NotImplementedError()
 
     def add_prediction_op(self):
         """"
@@ -63,30 +66,15 @@ class Model:
         Returns:
             loss: loss over the batch (a scalar)
         """
-        self.add_data_op(batch_data, batch_labels)
-        _, loss = sess.run([self.train_op, self.loss])
-
+        feed = self.create_feed_dict(batch_data, batch_labels)
+        _, loss = sess.run([self.train, self.loss], feed_dict=feed)
         return loss
-
-    def predict_on_batch(self, sess, batch_data):
-        """
-        Make predictions for the provided batch of data
-
-        Args:
-            sess: A Tensorflow session
-            batch_data: A tensor with shape (batch_size, num_features)
-        Returns:
-            predictions: np.ndarray of shape (n_samples, n_classes)
-        """
-        self.add_data_op(batch_data)
-        predictions = sess.run(self.pred)
-
-        return predictions
 
     def build_graph(self):
         """
         Create the computational graph for the model.
         """
-        self.pred = self.add_prediction_op()
+        self.add_placeholder()
+        self.pred = self.add_prediction_op()  # Too slow, look into
         self.loss = self.add_loss_op(self.pred)
         self.train = self.add_training_op(self.loss)
