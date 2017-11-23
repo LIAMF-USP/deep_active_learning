@@ -3,6 +3,14 @@ import tensorflow as tf
 from model.sentiment_analysis_model import SentimentAnalysisModel, Config
 
 
+def sequence_length(x_hat):
+    used = tf.sign(tf.reduce_max(tf.abs(x_hat), 2))
+    length = tf.reduce_sum(used, axis=1)
+    length = tf.cast(length, tf.int32)
+
+    return length
+
+
 class LSTMConfig(Config):
 
     def __init__(self, user_args):
