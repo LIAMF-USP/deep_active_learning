@@ -29,7 +29,6 @@ class LSTMModel(SentimentAnalysisModel):
         self.pretrained_embeddings = pretrained_embeddings
 
         self.build_graph()
-        print('Saiu aqui')
 
     def add_placeholder(self):
         max_length = self.config.max_length

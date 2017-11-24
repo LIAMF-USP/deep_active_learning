@@ -1,3 +1,5 @@
+import os
+import pickle
 import re
 
 import tensorflow as tf
@@ -63,6 +65,19 @@ def create_vocab_parser(vocab, sentence_size):
     vocabulary_processor.fit(vocab)
 
     return vocabulary_processor
+
+
+def get_glove_matrix(save_path, glove_path, embed_size, progbar=None):
+    if os.path.exists(save_path):
+        with open(save_path, 'rb') as glove_pkl:
+            glove_matrix = pickle.load(glove_pkl)
+    else:
+        _, glove_matrix, _ = load_glove(glove_path, embed_size)
+
+        with open(save_path, 'wb') as glove_pkl:
+            pickle.dump(glove_matrix, glove_pkl)
+
+    return glove_matrix
 
 
 def load_glove(glove_path, embed_size, progbar=None):

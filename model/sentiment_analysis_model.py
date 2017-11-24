@@ -97,6 +97,7 @@ class SentimentAnalysisModel(Model):
             accuracy = self.evaluate(sess, dataset)
 
             print('Accuracy for epoch {}: {}'.format(epoch, accuracy))
+            print()
 
             if accuracy > best_score:
                 best_score = accuracy
