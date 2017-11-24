@@ -8,31 +8,23 @@ WORD_POS = 0
 
 class SentenceTFRecord():
 
-    def __init__(self, sentence_id_path, output_path, label, progbar=None):
-        self.sentences_id_path = sentence_id_path
+    def __init__(self, reviews, output_path, progbar=None):
+        self.reviews = reviews
         self.output_path = output_path
-        self.label = label
         self.progbar = progbar
 
-    def parse_file(self):
-        with open(self.sentences_id_path, 'rb') as sentence_file:
-            writer = tf.python_io.TFRecordWriter(self.output_path)
+    def parse_sentences(self):
+        writer = tf.python_io.TFRecordWriter(self.output_path)
 
-            sentence_lines = sentence_file.readlines()
+        for index, (sentence, label) in enumerate(self.reviews):
+            example = self.make_example(sentence, label)
+
+            writer.write(example.SerializeToString())
 
             if self.progbar:
-                self.progbar.target = len(sentence_lines)
+                self.progbar.update(index + 1, [])
 
-            for index, sentence in enumerate(sentence_lines):
-                sentence_array = sentence.split()
-                example = self.make_example(sentence_array, self.label)
-
-                writer.write(example.SerializeToString())
-
-                if self.progbar:
-                    self.progbar.update(index + 1, [])
-
-            writer.close()
+        writer.close()
 
     def make_example(self, sentence, label):
         example = tf.train.SequenceExample()

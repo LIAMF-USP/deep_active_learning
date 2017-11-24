@@ -2,8 +2,6 @@ import argparse
 import random
 import os
 
-import numpy as np
-
 from preprocessing.format_dataset import (remove_html_from_text,
                                           remove_special_characters_from_text,
                                           add_space_between_characters,
@@ -13,6 +11,10 @@ from preprocessing.format_dataset import (remove_html_from_text,
                                           load_glove,
                                           to_lower)
 from utils.progress_bar import Progbar
+
+
+POS_LABEL = 0
+NEG_LABEL = 1
 
 
 def preprocess_review_text(review_text):
@@ -82,27 +84,40 @@ def apply_data_preprocessing(user_args):
     return preprocess_files(dataset_path, output_dataset_path)
 
 
-def transform_sentences(vocabulary_processor, movie_reviews):
-    for review in movie_reviews:
-        yield sentence_to_id_list(review, vocabulary_processor)
+def add_label_to_dataset(dataset, label):
+    return [(data, label) for data in dataset]
 
 
-def save_sentences_id_list(dataset_path, sentence_type, sentences_id_list,
-                           num_sentences):
-    sentences_type_path = os.path.join(dataset_path, sentence_type)
-    filename = '{}_sentences_id_list.txt'.format(sentence_type)
-    sentences_id_path = os.path.join(sentences_type_path, filename)
+def create_unified_dataset(pos_reviews, neg_reviews):
+    pos_reviews = add_label_to_dataset(pos_reviews, POS_LABEL)
+    neg_reviews = add_label_to_dataset(neg_reviews, NEG_LABEL)
 
-    progbar = Progbar(target=num_sentences)
+    all_reviews = pos_reviews + neg_reviews
 
-    with open(sentences_id_path, 'wb') as sentences_file:
-        for index, review in enumerate(sentences_id_list):
-            review = list(review)[0]
-            review = review.reshape(1, review.shape[0])
-            np.savetxt(sentences_file, review, fmt='%u', delimiter=' ',
-                       newline='\n', header='', footer='', comments='# ')
+    random.shuffle(all_reviews)
 
-            progbar.update(index + 1, [])
+    return all_reviews
+
+
+def transform_sentences(movie_reviews, vocabulary_processor):
+    transformed_sentences = []
+    progbar = Progbar(target=len(movie_reviews))
+
+    for index, (review, label) in enumerate(movie_reviews):
+        review_id_list = sentence_to_id_list(review, vocabulary_processor)
+
+        """
+        The function sentence_to_id_list return a generator with a list
+        of the sentences parsed. Since we doing this sequentially,
+        we evaluate the generator, which returns a list of numpy arrays.
+        """
+        review_id_list = list(review_id_list)
+        review_id_list = review_id_list[0].tolist()
+
+        transformed_sentences.append((review_id_list, label))
+        progbar.update(index + 1, [])
+
+    return transformed_sentences
 
 
 def create_vocabulary_processor(glove_file, embed_size, sentence_size):
@@ -116,71 +131,32 @@ def create_vocabulary_processor(glove_file, embed_size, sentence_size):
     return vocabulary_processor
 
 
-def label_to_str(label):
-    return 'pos' if label == 0 else 'neg'
+def create_tfrecords(reviews, output_path, dataset_type):
+    output_path = os.path.join(output_path, dataset_type,
+                               '{}.tfrecord'.format(dataset_type))
+    progbar = Progbar(target=len(reviews))
+
+    sentence_tfrecord = SentenceTFRecord(reviews, output_path, progbar)
+    sentence_tfrecord.parse_sentences()
 
 
-def transform_all_data(reviews_list, labels_list, dataset_type_list,
-                       vocabulary_processor, data_dir):
-    for reviews, label, dataset_type in zip(reviews_list, labels_list, dataset_type_list):
-        transform_data(reviews, label, dataset_type, vocabulary_processor, data_dir)
+def create_validation_set(all_reviews, percent=0.1):
+    num_reviews = int(len(all_reviews) * percent)
 
+    validation_reviews = all_reviews[0:num_reviews]
+    all_reviews = all_reviews[num_reviews:]
 
-def transform_data(reviews, label, dataset_type, vocabulary_processor, data_dir):
-    dataset_path = os.path.join(data_dir, dataset_type)
-    label_str = label_to_str(label)
-    print('Saving {} sentences id lists into {} dir'.format(label_str, dataset_type))
-
-    sentences_id_list = transform_sentences(vocabulary_processor, reviews)
-    save_sentences_id_list(dataset_path, label_str, sentences_id_list, len(reviews))
-
-
-def create_all_tfrecords(dataset_types, labels, data_dir):
-    for dataset_type, label in zip(dataset_types, labels):
-        label_str = label_to_str(label)
-        print('Creating {} TFRecords into {}/{}'.format(label_str, dataset_type, label_str))
-
-        output_path = os.path.join(data_dir, dataset_type,
-                                   label_str, '{}.tfrecord'.format(label_str))
-        sentences_id_path = os.path.join(data_dir, dataset_type, label_str,
-                                         '{}_sentences_id_list.txt'.format(label_str))
-        create_tf_record(sentences_id_path, output_path, label)
-
-
-def create_tf_record(sentences_id_path, output_path, label):
-    progbar = Progbar(target=0)
-    sentence_tfrecord = SentenceTFRecord(sentences_id_path, output_path, label, progbar)
-    sentence_tfrecord.parse_file()
-
-
-def create_validation_set(pos_reviews, neg_reviews, percent=0.1):
-    num_pos = int(len(pos_reviews) * percent)
-    num_neg = int(len(neg_reviews) * percent)
-
-    random.shuffle(pos_reviews)
-    random.shuffle(neg_reviews)
-
-    validation_pos = pos_reviews[0:num_pos]
-    validation_neg = neg_reviews[0:num_neg]
-
-    pos_reviews = pos_reviews[num_pos:]
-    neg_reviews = neg_reviews[num_neg:]
-
-    return pos_reviews, neg_reviews, validation_pos, validation_neg
+    return all_reviews, validation_reviews
 
 
 def create_validation_dir(user_args):
     output_dir = user_args['output_dir']
     validation_dir = 'val'
 
-    validation_pos_path = os.path.join(output_dir, validation_dir, 'pos')
-    validation_neg_path = os.path.join(output_dir, validation_dir, 'neg')
+    validation_path = os.path.join(output_dir, validation_dir)
 
-    if not os.path.exists(validation_pos_path):
-        os.makedirs(validation_pos_path)
-
-    if not os.path.exists(validation_neg_path):
-        os.makedirs(validation_neg_path)
+    if not os.path.exists(validation_path):
+        os.makedirs(validation_path)
 
 
 def create_argument_parser():
@@ -225,31 +201,63 @@ def main():
     output_dir = user_args['output_dir']
     is_test = False if dataset_type == 'train' else True
 
+    """
+    This step is responsible for parsing the review texts, such as removing
+    HTML tags, or separating string such as he's into he and 's.
+    """
     pos_reviews, neg_reviews = apply_data_preprocessing(user_args)
 
+    """
+    This step will join both pos_reviews and neg_reviews into a single list
+    and add a label to each review sentence. Finally, these reviews will be
+    shuffled.
+    """
+    all_reviews = create_unified_dataset(pos_reviews, neg_reviews)
+
     if not is_test:
-        pos_reviews, neg_reviews, validation_pos, validation_neg = create_validation_set(
-            pos_reviews, neg_reviews)
+        """
+        If we are preprocessing the training data, we should also
+        create the validation set for hyperparamenter tuning.
+        """
+        all_reviews, validation_reviews = create_validation_set(all_reviews)
         print('Creating validation set')
         create_validation_dir(user_args)
 
     glove_file = user_args['glove_file']
     sentence_size = user_args['sentence_size']
     embed_size = user_args['embed_size']
+
+    """
+    We use the GloVe embeddings to create a vocubalary processor for our
+    reviews. This vocabulary processor is responsible for turning each token
+    in a review into an id correspoding to the word row position on the
+    GloVe matrix.
+    """
     vocabulary_processor = create_vocabulary_processor(glove_file, embed_size, sentence_size)
 
-    if not is_test:
-        reviews = [pos_reviews, neg_reviews, validation_pos, validation_neg]
-        labels = [0, 1, 0, 1]
-        dataset_types = [dataset_type, dataset_type, 'val', 'val']
-    else:
-        reviews = [pos_reviews, neg_reviews]
-        labels = [0, 1]
-        dataset_types = [dataset_type, dataset_type]
-
-    transform_all_data(reviews, labels, dataset_types, vocabulary_processor, output_dir)
+    """
+    The reviews are turned into a list of ids.
+    """
+    print('Transforming {} reviews into list of ids'.format(dataset_type))
+    all_reviews = transform_sentences(all_reviews, vocabulary_processor)
     print()
-    create_all_tfrecords(dataset_types, labels, output_dir)
+
+    if not is_test:
+        print('Transforming validation reviews into list of ids')
+        validation_reviews = transform_sentences(validation_reviews, vocabulary_processor)
+        print()
+
+    """
+    Create the TFRecords file for our reviews.
+    """
+    print('Transforming {} reviews into tfrecords'.format(dataset_type))
+    create_tfrecords(all_reviews, output_dir, dataset_type)
+    print()
+
+    if not is_test:
+        print('Transforming validation reviews into tfrecords')
+        create_tfrecords(validation_reviews, output_dir, 'val')
+        print()
 
 
 if __name__ == '__main__':
