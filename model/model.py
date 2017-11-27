@@ -16,6 +16,12 @@ class Model:
         """
         raise NotImplementedError()
 
+    def add_evaluation_op(self):
+        """
+        Method responsible for creating a graph to evaluate the model.
+        """
+        raise NotImplementedError()
+
     def create_feed_dict(self, data_batch, labels_batch=None):
         """
         Create the feed dict for one step of training.
@@ -78,3 +84,5 @@ class Model:
         self.pred = self.add_prediction_op()  # Too slow, look into
         self.loss = self.add_loss_op(self.pred)
         self.train = self.add_training_op(self.loss)
+
+        self.add_evaluation_op()

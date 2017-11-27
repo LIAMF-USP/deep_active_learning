@@ -33,10 +33,13 @@ class LSTMModel(SentimentAnalysisModel):
     def add_placeholder(self):
         max_length = self.config.max_length
 
-        self.data_placeholder = tf.placeholder(
-            dtype=tf.int32, shape=[None, max_length])
-        self.labels_placeholder = tf.placeholder(
-            dtype=tf.int32, shape=[None])
+        with tf.name_scope('placeholders'):
+            self.data_placeholder = tf.placeholder(
+                dtype=tf.int32, shape=[None, max_length],
+                name='data')
+            self.labels_placeholder = tf.placeholder(
+                dtype=tf.int32, shape=[None],
+                name='labels')
 
     def create_feed_dict(self, data_batch, labels_batch=None):
         feed_dict = {self.data_placeholder: data_batch}
@@ -51,8 +54,9 @@ class LSTMModel(SentimentAnalysisModel):
         Adds and embedding layer that map the sentences id list to word vectors.
         """
 
-        base_embeddings = tf.Variable(self.pretrained_embeddings, dtype=tf.float32)
-        inputs = tf.nn.embedding_lookup(base_embeddings, self.data_placeholder)
+        with tf.name_scope('embeddings'):
+            base_embeddings = tf.Variable(self.pretrained_embeddings, dtype=tf.float32)
+            inputs = tf.nn.embedding_lookup(base_embeddings, self.data_placeholder)
 
         return inputs
 
@@ -61,43 +65,67 @@ class LSTMModel(SentimentAnalysisModel):
         num_classes = self.config.num_classes
 
         x_hat = self.add_embedding()
-        lstm_cell = tf.nn.rnn_cell.LSTMCell(num_units)
 
-        seqlen = sequence_length(x_hat)  # Slow graph creation, investigate
+        with tf.name_scope('lstm'):
+            lstm_cell = tf.nn.rnn_cell.LSTMCell(num_units)
+            seqlen = sequence_length(x_hat)  # Slow graph creation, investigate
 
-        """
-        The dynamic_rnn outputs a 0 for every output after it has reached
-        the end of a sentence. When doing sequence classification,
-        we need the last relevant value from the outputs matrix.
+            """
+            The dynamic_rnn outputs a 0 for every output after it has reached
+            the end of a sentence. When doing sequence classification,
+            we need the last relevant value from the outputs matrix.
 
-        Since we are using a single LSTM cell, this can be achieved by getting
-        the output from the cell.h returned from the dynamic_rnn method.
-        """
-        _, cell = tf.nn.dynamic_rnn(lstm_cell, x_hat,
-                                    sequence_length=seqlen,
-                                    dtype=tf.float32)
+            Since we are using a single LSTM cell, this can be achieved by getting
+            the output from the cell.h returned from the dynamic_rnn method.
+            """
+            _, cell = tf.nn.dynamic_rnn(lstm_cell, x_hat,
+                                        sequence_length=seqlen,
+                                        dtype=tf.float32)
 
-        """
-        This variable will have shape [batch_size, num_units]
-        """
-        lstm_output = cell.h
+            """
+            This variable will have shape [batch_size, num_units]
+            """
+            lstm_output = cell.h
 
-        weight = tf.Variable(tf.truncated_normal([num_units, num_classes]))
-        bias = tf.Variable(tf.constant(0.1, shape=[num_classes]))
+        with tf.name_scope('output'):
+            weight = tf.Variable(
+                tf.truncated_normal([num_units, num_classes]),
+                name='weight')
+            bias = tf.Variable(
+                tf.constant(0.1, shape=[num_classes]),
+                name='bias')
 
         prediction = tf.matmul(lstm_output, weight) + bias
 
         return prediction
 
     def add_loss_op(self, pred):
-        loss = tf.reduce_mean(
-            tf.nn.sparse_softmax_cross_entropy_with_logits(
-                logits=pred,
-                labels=self.labels_placeholder))
+        with tf.name_scope('loss'):
+            loss = tf.reduce_mean(
+                tf.nn.sparse_softmax_cross_entropy_with_logits(
+                    logits=pred,
+                    labels=self.labels_placeholder),
+                name='cross_entropy')
 
         return loss
 
     def add_training_op(self, loss):
-        train = tf.train.AdamOptimizer().minimize(loss)
+        with tf.name_scope('train'):
+            train = tf.train.AdamOptimizer().minimize(loss)
 
         return train
+
+    def add_evaluation_op(self):
+        with tf.name_scope('validation'):
+            predictions = tf.cast(tf.argmax(self.pred, axis=1), tf.int32)
+            size = tf.cast(tf.shape(predictions)[0], tf.float32)
+            correct_pred = tf.equal(predictions, self.labels_placeholder)
+
+            self._accuracy = tf.reduce_mean(tf.cast(correct_pred, tf.float32)) * size
+            self._size = size
+
+    def batch_evaluate(self, sess, batch_data, batch_labels):
+        feed = self.create_feed_dict(batch_data, batch_labels)
+        accuracy, total = sess.run([self._accuracy, self._size], feed_dict=feed)
+
+        return accuracy, total

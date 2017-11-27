@@ -35,6 +35,21 @@ class SentimentAnalysisModel(Model):
         self.config = config
         self.verbose = verbose
 
+    def batch_evaluate(self, sess, batch_data, batch_labels):
+        """
+        This method is used to calculate en evaluation metric over a batch of
+        data.
+
+        Args:
+            sess: A Tensorflow session
+            batch_data: The batch of data to be feed to the model
+            batch_labels: The labels corresponding to each data in the batch
+        Returns:
+            metric_value: The value of the metric for the batch
+            size: The size of the batch used to calculate this metric.
+        """
+        return NotImplementedError()
+
     def evaluate(self, sess, dataset, dataset_type='val'):
         """
         This method will be used to calculate the accuracy metric over
@@ -63,16 +78,7 @@ class SentimentAnalysisModel(Model):
         while True:
             try:
                 batch_data, batch_labels = sess.run(dataset.get_batch())
-
-                predictions = tf.argmax(self.pred, axis=1)
-                weight = tf.cast(tf.shape(predictions)[0], tf.float32)
-                correct_pred = tf.equal(predictions, batch_labels)
-
-                _accuracy = tf.reduce_mean(tf.cast(correct_pred, tf.float32)) * weight
-                _total = weight
-
-                feed = self.create_feed_dict(batch_data, batch_labels)
-                accuracy, total = sess.run([_accuracy, _total], feed_dict=feed)
+                accuracy, total = self.batch_evaluate(sess, batch_data, batch_labels)
 
                 ac_accuracy += accuracy
                 ac_total += total
