@@ -1,6 +1,9 @@
 import tensorflow as tf
 
+from math import ceil
+
 from model.model import Model
+from utils.progress_bar import Progbar
 
 
 class Config:
@@ -16,6 +19,9 @@ class Config:
         self.num_epochs = user_args['num_epochs']
         self.embed_size = user_args['embed_size']
         self.num_classes = user_args['num_classes']
+        self.num_train = user_args['num_train']
+        self.num_validation = user_args['num_validation']
+        self.num_test = user_args['num_test']
 
 
 class SentimentAnalysisModel(Model):
@@ -29,7 +35,7 @@ class SentimentAnalysisModel(Model):
         self.config = config
         self.verbose = verbose
 
-    def evaluate(self, sess, dataset):
+    def evaluate(self, sess, dataset, dataset_type='val'):
         """
         This method will be used to calculate the accuracy metric over
         a batch of examples from the validation or test set.
@@ -41,10 +47,18 @@ class SentimentAnalysisModel(Model):
             sess: A Tensorflow session
             dataset: A tf.data.Dataset object containing the validation or
                      test data
+            dataset_type: A variable indicating which dataset is being evaluated
         Returns:
             accuracy: The mean accuracy for the dataset
         """
         ac_accuracy, ac_total = 0, 0
+
+        if dataset_type == 'val':
+            target = self.config.num_validation
+
+        if self.verbose:
+            i = 0
+            progbar = Progbar(target=ceil(target / self.config.batch_size))
 
         while True:
             try:
@@ -63,11 +77,18 @@ class SentimentAnalysisModel(Model):
                 ac_accuracy += accuracy
                 ac_total += total
 
+                if self.verbose:
+                    i += 1
+                    progbar.update(i, [])
+
             except tf.errors.OutOfRangeError:
                 return ac_accuracy / ac_total
 
     def run_epoch(self, sess, dataset):
+
         if self.verbose:
+            target = ceil(self.config.num_train / self.config.batch_size)
+            progbar = Progbar(target=target)
             i = 0
 
         while True:
@@ -77,9 +98,7 @@ class SentimentAnalysisModel(Model):
 
                 if self.verbose:
                     i += 1
-
-                    if i % 100 == 0:
-                        print('Loss: {0:.6f}'.format(loss))
+                    progbar.update(i, [('train loss', loss)])
 
             except tf.errors.OutOfRangeError:
                 break

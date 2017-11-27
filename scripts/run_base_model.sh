@@ -9,11 +9,15 @@ TRAIN_FILE="data/aclImdb_formatted/train/train.tfrecord"
 VALIDATION_FILE="data/aclImdb_formatted/val/val.tfrecord"
 TEST_FILE="data/aclImdb_formatted/test/test.tfrecord"
 
+NUM_TRAIN=22500
+NUM_VALIDATION=2500
+NUM_TEST=25000
+
 GLOVE_FILE="data/glove.6B.50d.txt"
 GLOVE_PICKLE="data/glove.pkl"
 
 BATCH_SIZE=128
-NUM_EPOCHS=1000
+NUM_EPOCHS=30
 EMBED_SIZE=50
 NUM_UNITS=64
 NUM_CLASSES=2
@@ -26,6 +30,9 @@ python base_model.py \
     --train-file=${TRAIN_FILE} \
     --validation-file=${VALIDATION_FILE} \
     --test-file=${TEST_FILE} \
+    --num-train=${NUM_TRAIN} \
+    --num-validation=${NUM_VALIDATION} \
+    --num-test=${NUM_TEST} \
     --batch-size=${BATCH_SIZE} \
     --num-epochs=${NUM_EPOCHS} \
     --perform-shuffle=${PERFORM_SHUFFLE} \
