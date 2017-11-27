@@ -1,3 +1,6 @@
+import tensorflow as tf
+
+
 class Model:
     """
     Abstracts a Tensorflow graph for a learning task.
@@ -73,8 +76,8 @@ class Model:
             loss: loss over the batch (a scalar)
         """
         feed = self.create_feed_dict(batch_data, batch_labels)
-        _, loss = sess.run([self.train, self.loss], feed_dict=feed)
-        return loss
+        _, loss, summary = sess.run([self.train, self.loss, self.summ], feed_dict=feed)
+        return loss, summary
 
     def build_graph(self):
         """
@@ -86,3 +89,4 @@ class Model:
         self.train = self.add_training_op(self.loss)
 
         self.add_evaluation_op()
+        self.summ = tf.summary.merge_all()

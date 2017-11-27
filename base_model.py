@@ -27,6 +27,17 @@ def create_dataset(user_args):
     return input_pipeline
 
 
+def initialize_tensorboard(user_args):
+    model_name = user_args['model_name']
+    tensorboard_save_name = create_unique_name(model_name)
+    tensorboard_dir = user_args['tensorboard_dir']
+
+    writer = tf.summary.FileWriter(
+        os.path.join(tensorboard_dir, tensorboard_save_name))
+
+    return writer
+
+
 def create_argument_parser():
     parser = argparse.ArgumentParser()
 
@@ -142,18 +153,13 @@ def main():
     lstm_model = LSTMModel(lstm_config, glove_matrix)
 
     with tf.Session() as sess:
-        model_name = user_args['model_name']
-        tensorboard_save_name = create_unique_name(model_name)
-        tensorboard_dir = user_args['tensorboard_dir']
-
-        writer = tf.summary.FileWriter(
-            os.path.join(tensorboard_dir, tensorboard_save_name))
+        writer = initialize_tensorboard(user_args)
         writer.add_graph(sess.graph)
 
         init = tf.global_variables_initializer()
         sess.run(init)
 
-        lstm_model.fit(sess, input_pipeline)
+        lstm_model.fit(sess, input_pipeline, writer)
 
 
 if __name__ == '__main__':

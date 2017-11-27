@@ -90,17 +90,22 @@ class SentimentAnalysisModel(Model):
             except tf.errors.OutOfRangeError:
                 return ac_accuracy / ac_total
 
-    def run_epoch(self, sess, dataset):
+    def run_epoch(self, sess, dataset, writer, epoch):
+        batch_size = self.config.batch_size
 
         if self.verbose:
-            target = ceil(self.config.num_train / self.config.batch_size)
+            target = ceil(self.config.num_train / batch_size)
             progbar = Progbar(target=target)
             i = 0
 
         while True:
             try:
                 batch_data, batch_labels = sess.run(dataset.get_batch())
-                loss = self.train_on_batch(sess, batch_data, batch_labels)
+                loss, s = self.train_on_batch(sess, batch_data, batch_labels)
+
+                if i % 20 == 0:
+                    index = epoch * batch_size + i
+                    writer.add_summary(s, index)
 
                 if self.verbose:
                     i += 1
@@ -109,14 +114,14 @@ class SentimentAnalysisModel(Model):
             except tf.errors.OutOfRangeError:
                 break
 
-    def fit(self, sess, dataset):
+    def fit(self, sess, dataset, writer=None):
         best_score = 0
         print('Training model...')
 
         for epoch in range(self.config.num_epochs):
             print('Running epoch {}'.format(epoch))
             sess.run(dataset.train_iterator)
-            self.run_epoch(sess, dataset)
+            self.run_epoch(sess, dataset, writer, epoch)
 
             sess.run(dataset.validation_iterator)
             accuracy = self.evaluate(sess, dataset)
