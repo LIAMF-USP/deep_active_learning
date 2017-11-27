@@ -13,11 +13,14 @@ NUM_TRAIN=22500
 NUM_VALIDATION=2500
 NUM_TEST=25000
 
+MODEL_NAME='base_model'
+TENSORBOARD_DIR='tensorboard_logs'
+
 GLOVE_FILE="data/glove.6B.50d.txt"
 GLOVE_PICKLE="data/glove.pkl"
 
 BATCH_SIZE=128
-NUM_EPOCHS=30
+NUM_EPOCHS=1
 EMBED_SIZE=50
 NUM_UNITS=64
 NUM_CLASSES=2
@@ -33,11 +36,13 @@ python base_model.py \
     --num-train=${NUM_TRAIN} \
     --num-validation=${NUM_VALIDATION} \
     --num-test=${NUM_TEST} \
+    --model-name=${MODEL_NAME} \
+    --tensorboard-dir=${TENSORBOARD_DIR} \
+    --glove-file=${GLOVE_FILE} \
+    --glove-pickle=${GLOVE_PICKLE} \
     --batch-size=${BATCH_SIZE} \
     --num-epochs=${NUM_EPOCHS} \
     --perform-shuffle=${PERFORM_SHUFFLE} \
-    --glove-file=${GLOVE_FILE} \
-    --glove-pickle=${GLOVE_PICKLE} \
     --embed-size=${EMBED_SIZE} \
     --num-units=${NUM_UNITS} \
     --max-length=${MAX_LENGTH} \

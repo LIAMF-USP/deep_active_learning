@@ -1,10 +1,12 @@
 import argparse
+import os
 
 import tensorflow as tf
 
 from model.input_pipeline import InputPipeline
 from model.lstm_model import LSTMModel, LSTMConfig
 from preprocessing.format_dataset import get_glove_matrix
+from utils.tensorboard import create_unique_name
 
 DEFAULT_BATCH_SIZE = 32
 DEFAULT_PERFORM_SHUFFLE = True
@@ -61,6 +63,26 @@ def create_argument_parser():
                         type=int,
                         help='Number of test examples')
 
+    parser.add_argument('-mn',
+                        '--model-name',
+                        type=str,
+                        help='The model name that will be used to save tensorboard information')
+
+    parser.add_argument('-td',
+                        '--tensorboard-dir',
+                        type=str,
+                        help='Directory to save tensorboard information')
+
+    parser.add_argument('-gf',
+                        '--glove-file',
+                        type=str,
+                        help='The path of the GloVe file')
+
+    parser.add_argument('-gpkl',
+                        '--glove-pickle',
+                        type=str,
+                        help='The path of GloVe matrix pickle file')
+
     parser.add_argument('-bs',
                         '--batch-size',
                         type=int,
@@ -78,16 +100,6 @@ def create_argument_parser():
                         type=bool,
                         default=DEFAULT_PERFORM_SHUFFLE,
                         help='If the dataset should be shuffled before using it')
-
-    parser.add_argument('-gf',
-                        '--glove-file',
-                        type=str,
-                        help='The path of the GloVe file')
-
-    parser.add_argument('-gpkl',
-                        '--glove-pickle',
-                        type=str,
-                        help='The path of GloVe matrix pickle file')
 
     parser.add_argument('-es',
                         '--embed-size',
@@ -130,6 +142,14 @@ def main():
     lstm_model = LSTMModel(lstm_config, glove_matrix)
 
     with tf.Session() as sess:
+        model_name = user_args['model_name']
+        tensorboard_save_name = create_unique_name(model_name)
+        tensorboard_dir = user_args['tensorboard_dir']
+
+        writer = tf.summary.FileWriter(
+            os.path.join(tensorboard_dir, tensorboard_save_name))
+        writer.add_graph(sess.graph)
+
         init = tf.global_variables_initializer()
         sess.run(init)
 

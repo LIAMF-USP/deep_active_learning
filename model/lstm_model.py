@@ -66,7 +66,7 @@ class LSTMModel(SentimentAnalysisModel):
 
         x_hat = self.add_embedding()
 
-        with tf.name_scope('lstm'):
+        with tf.name_scope('lstm_layer'):
             lstm_cell = tf.nn.rnn_cell.LSTMCell(num_units)
             seqlen = sequence_length(x_hat)  # Slow graph creation, investigate
 
@@ -87,7 +87,7 @@ class LSTMModel(SentimentAnalysisModel):
             """
             lstm_output = cell.h
 
-        with tf.name_scope('output'):
+        with tf.name_scope('output_layer'):
             weight = tf.Variable(
                 tf.truncated_normal([num_units, num_classes]),
                 name='weight')
@@ -95,7 +95,7 @@ class LSTMModel(SentimentAnalysisModel):
                 tf.constant(0.1, shape=[num_classes]),
                 name='bias')
 
-        prediction = tf.matmul(lstm_output, weight) + bias
+            prediction = tf.matmul(lstm_output, weight) + bias
 
         return prediction
 
