@@ -91,11 +91,9 @@ class SentimentAnalysisModel(Model):
                 return ac_accuracy / ac_total
 
     def run_epoch(self, sess, dataset, writer, epoch):
-        batch_size = self.config.batch_size
-
+        total_batch = ceil(self.config.num_train / self.config.batch_size)
         if self.verbose:
-            target = ceil(self.config.num_train / batch_size)
-            progbar = Progbar(target=target)
+            progbar = Progbar(target=total_batch)
             i = 0
 
         while True:
@@ -104,7 +102,7 @@ class SentimentAnalysisModel(Model):
                 loss, s = self.train_on_batch(sess, batch_data, batch_labels)
 
                 if i % 20 == 0:
-                    index = epoch * batch_size + i
+                    index = (epoch * total_batch) + i
                     writer.add_summary(s, index)
 
                 if self.verbose:

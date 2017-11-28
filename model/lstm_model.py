@@ -97,7 +97,6 @@ class LSTMModel(SentimentAnalysisModel):
 
             prediction = tf.matmul(lstm_output, weight) + bias
 
-
             tf.summary.histogram('output_weight', weight)
             tf.summary.histogram('output_bias', bias)
             tf.summary.histogram('prediction', prediction)
