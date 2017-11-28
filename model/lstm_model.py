@@ -86,6 +86,7 @@ class LSTMModel(SentimentAnalysisModel):
             This variable will have shape [batch_size, num_units]
             """
             lstm_output = cell.h
+            tf.summary.histogram('lstm_output', lstm_output)
 
         with tf.name_scope('output_layer'):
             weight = tf.Variable(
