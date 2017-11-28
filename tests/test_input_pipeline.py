@@ -24,7 +24,7 @@ class InputPipelineTests(tf.test.TestCase):
 
             while True:
                 try:
-                    tokens, labels = input_pipeline.get_batch()
+                    tokens, labels = input_pipeline.make_batch()
                     tokens.eval()
 
                     num_batches += 1
@@ -39,7 +39,7 @@ class InputPipelineTests(tf.test.TestCase):
 
             while True:
                 try:
-                    tokens, labels = input_pipeline.get_batch()
+                    tokens, labels = input_pipeline.make_batch()
                     tokens.eval()
 
                     num_batches += 1
@@ -54,7 +54,7 @@ class InputPipelineTests(tf.test.TestCase):
 
             while True:
                 try:
-                    tokens, labels = input_pipeline.get_batch()
+                    tokens, labels = input_pipeline.make_batch()
                     tokens.eval()
 
                     num_batches += 1
@@ -69,7 +69,7 @@ class InputPipelineTests(tf.test.TestCase):
 
             while True:
                 try:
-                    tokens, labels = input_pipeline.get_batch()
+                    tokens, labels = input_pipeline.make_batch()
                     tokens.eval()
 
                     num_batches += 1
