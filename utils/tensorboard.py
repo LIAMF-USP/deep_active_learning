@@ -1,3 +1,5 @@
+import tensorflow as tf
+
 from datetime import datetime
 
 
@@ -19,3 +21,11 @@ def create_unique_name(base_name):
 
     date_str = datetime.now().strftime("%d-%m-%Y-%H:%M:%S")
     return base_name + '-' + date_str
+
+
+def add_array_to_summary_writer(writer, array, tagname):
+    for index, value in enumerate(array):
+        summary = tf.Summary()
+        summary.value.add(tag=tagname, simple_value=value)
+        writer.add_summary(summary, index)
+        writer.flush()

@@ -4,6 +4,7 @@ from math import ceil
 
 from model.model import Model
 from utils.progress_bar import Progbar
+from utils.tensorboard import add_array_to_summary_writer
 
 
 class Config:
@@ -78,10 +79,10 @@ class SentimentAnalysisModel(Model):
         while True:
             try:
                 batch_data, batch_labels = sess.run(dataset.get_batch())
-                accuracy, total = self.batch_evaluate(sess, batch_data, batch_labels)
+                accuracy, size = self.batch_evaluate(sess, batch_data, batch_labels)
 
                 ac_accuracy += accuracy
-                ac_total += total
+                ac_total += size
 
                 if self.verbose:
                     i += 1
@@ -92,6 +93,7 @@ class SentimentAnalysisModel(Model):
 
     def run_epoch(self, sess, dataset, writer, epoch):
         total_batch = ceil(self.config.num_train / self.config.batch_size)
+
         if self.verbose:
             progbar = Progbar(target=total_batch)
             i = 0
@@ -114,6 +116,7 @@ class SentimentAnalysisModel(Model):
 
     def fit(self, sess, dataset, writer=None):
         best_score = 0
+        accuracies = []
         print('Training model...')
 
         for epoch in range(self.config.num_epochs):
@@ -123,11 +126,14 @@ class SentimentAnalysisModel(Model):
 
             sess.run(dataset.validation_iterator)
             accuracy = self.evaluate(sess, dataset)
+            accuracies.append(accuracy)
 
             print('Accuracy for epoch {}: {}'.format(epoch, accuracy))
             print()
 
             if accuracy > best_score:
                 best_score = accuracy
+
+        add_array_to_summary_writer(writer, accuracies, 'accuracy')
 
         return best_score
