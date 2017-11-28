@@ -13,13 +13,7 @@ class Model:
         self.batch_data = None
         self.batch_labels = None
 
-    def add_placeholder(self):
-        """
-        Add placeholder variables to tensorflow computational graph.
-        """
-        raise NotImplementedError()
-
-    def add_evaluation_op(self):
+    def add_evaluation_op(self, labels):
         """
         Method responsible for creating a graph to evaluate the model.
         """
@@ -31,7 +25,7 @@ class Model:
         """
         raise NotImplementedError()
 
-    def add_prediction_op(self):
+    def add_prediction_op(self, inputs):
         """"
         Method responsible for transforming a batch of data into predictions.
 
@@ -40,7 +34,7 @@ class Model:
         """
         raise NotImplementedError()
 
-    def add_loss_op(self, pred):
+    def add_loss_op(self, pred, labels):
         """
         Method responsible for adding a loss function to the computational graph.
 
@@ -64,7 +58,7 @@ class Model:
 
         raise NotImplementedError()
 
-    def train_on_batch(self, sess, batch_data, batch_labels):
+    def train_on_batch(self, sess):
         """
         Perform one step of gradient descent on the provided batch of data.
 
@@ -75,18 +69,16 @@ class Model:
         Returns:
             loss: loss over the batch (a scalar)
         """
-        feed = self.create_feed_dict(batch_data, batch_labels)
-        _, loss, summary = sess.run([self.train, self.loss, self.summ], feed_dict=feed)
+        _, loss, summary = sess.run([self.train, self.loss, self.summ])
         return loss, summary
 
-    def build_graph(self):
+    def build_graph(self, inputs, labels):
         """
         Create the computational graph for the model.
         """
-        self.add_placeholder()
-        self.pred = self.add_prediction_op()  # Too slow, look into
-        self.loss = self.add_loss_op(self.pred)
+        self.pred = self.add_prediction_op(inputs)  # Too slow, look into
+        self.loss = self.add_loss_op(self.pred, labels)
         self.train = self.add_training_op(self.loss)
 
-        self.add_evaluation_op()
+        self.add_evaluation_op(labels)
         self.summ = tf.summary.merge_all()

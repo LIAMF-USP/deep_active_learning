@@ -28,43 +28,22 @@ class LSTMModel(SentimentAnalysisModel):
 
         self.pretrained_embeddings = pretrained_embeddings
 
-        self.build_graph()
-
-    def add_placeholder(self):
-        max_length = self.config.max_length
-
-        with tf.name_scope('placeholders'):
-            self.data_placeholder = tf.placeholder(
-                dtype=tf.int32, shape=[None, max_length],
-                name='data')
-            self.labels_placeholder = tf.placeholder(
-                dtype=tf.int32, shape=[None],
-                name='labels')
-
-    def create_feed_dict(self, data_batch, labels_batch=None):
-        feed_dict = {self.data_placeholder: data_batch}
-
-        if labels_batch is not None:
-            feed_dict[self.labels_placeholder] = labels_batch
-
-        return feed_dict
-
-    def add_embedding(self):
+    def add_embedding(self, inputs):
         """
         Adds and embedding layer that map the sentences id list to word vectors.
         """
 
         with tf.name_scope('embeddings'):
             base_embeddings = tf.Variable(self.pretrained_embeddings, dtype=tf.float32)
-            inputs = tf.nn.embedding_lookup(base_embeddings, self.data_placeholder)
+            inputs = tf.nn.embedding_lookup(base_embeddings, inputs)
 
         return inputs
 
-    def add_prediction_op(self):
+    def add_prediction_op(self, inputs):
         num_units = self.config.num_units
         num_classes = self.config.num_classes
 
-        x_hat = self.add_embedding()
+        x_hat = self.add_embedding(inputs)
 
         with tf.name_scope('lstm_layer'):
             lstm_cell = tf.nn.rnn_cell.LSTMCell(num_units)
@@ -104,12 +83,12 @@ class LSTMModel(SentimentAnalysisModel):
 
         return prediction
 
-    def add_loss_op(self, pred):
+    def add_loss_op(self, pred, labels):
         with tf.name_scope('loss'):
             loss = tf.reduce_mean(
                 tf.nn.sparse_softmax_cross_entropy_with_logits(
                     logits=pred,
-                    labels=self.labels_placeholder),
+                    labels=labels),
                 name='cross_entropy')
 
             tf.summary.scalar('loss', loss)
@@ -122,17 +101,16 @@ class LSTMModel(SentimentAnalysisModel):
 
         return train
 
-    def add_evaluation_op(self):
+    def add_evaluation_op(self, labels):
         with tf.name_scope('validation'):
             predictions = tf.cast(tf.argmax(self.pred, axis=1), tf.int32)
             size = tf.cast(tf.shape(predictions)[0], tf.float32)
-            correct_pred = tf.equal(predictions, self.labels_placeholder)
+            correct_pred = tf.equal(predictions, tf.cast(labels, tf.int32))
 
             self._accuracy = tf.reduce_mean(tf.cast(correct_pred, tf.float32)) * size
             self._size = size
 
-    def batch_evaluate(self, sess, batch_data, batch_labels):
-        feed = self.create_feed_dict(batch_data, batch_labels)
-        accuracy, total = sess.run([self._accuracy, self._size], feed_dict=feed)
+    def batch_evaluate(self, sess):
+        accuracy, total = sess.run([self._accuracy, self._size])
 
         return accuracy, total

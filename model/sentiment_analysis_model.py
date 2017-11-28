@@ -78,8 +78,7 @@ class SentimentAnalysisModel(Model):
 
         while True:
             try:
-                batch_data, batch_labels = sess.run(dataset.get_batch())
-                accuracy, size = self.batch_evaluate(sess, batch_data, batch_labels)
+                accuracy, size = self.batch_evaluate(sess)
 
                 ac_accuracy += accuracy
                 ac_total += size
@@ -100,8 +99,7 @@ class SentimentAnalysisModel(Model):
 
         while True:
             try:
-                batch_data, batch_labels = sess.run(dataset.get_batch())
-                loss, s = self.train_on_batch(sess, batch_data, batch_labels)
+                loss, s = self.train_on_batch(sess)
 
                 if i % 20 == 0:
                     index = (epoch * total_batch) + i
@@ -114,14 +112,19 @@ class SentimentAnalysisModel(Model):
             except tf.errors.OutOfRangeError:
                 break
 
+    def prepare(self, sess, dataset):
+        sess.run(dataset.train_iterator)
+        batch_data, batch_labels = dataset.make_batch()
+        self.build_graph(batch_data, batch_labels)
+
     def fit(self, sess, dataset, writer=None):
         best_score = 0
+
         accuracies = []
         print('Training model...')
 
         for epoch in range(self.config.num_epochs):
             print('Running epoch {}'.format(epoch))
-            sess.run(dataset.train_iterator)
             self.run_epoch(sess, dataset, writer, epoch)
 
             sess.run(dataset.validation_iterator)
@@ -133,6 +136,8 @@ class SentimentAnalysisModel(Model):
 
             if accuracy > best_score:
                 best_score = accuracy
+
+            sess.run(dataset.train_iterator)
 
         add_array_to_summary_writer(writer, accuracies, 'accuracy')
 

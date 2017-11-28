@@ -12,6 +12,8 @@ DEFAULT_BATCH_SIZE = 32
 DEFAULT_PERFORM_SHUFFLE = True
 DEFAULT_NUM_EPOCHS = 10000
 
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
+
 
 def create_dataset(user_args):
     train_file = user_args['train_file']
@@ -155,6 +157,8 @@ def main():
     with tf.Session() as sess:
         writer = initialize_tensorboard(user_args)
         writer.add_graph(sess.graph)
+
+        lstm_model.prepare(sess, input_pipeline)
 
         init = tf.global_variables_initializer()
         sess.run(init)
