@@ -2,10 +2,12 @@ import os
 import pickle
 import re
 
+import numpy as np
 import tensorflow as tf
 
 
 WORD_POS = 0
+UNK_TOKEN = '<unk>'
 
 
 class SentenceTFRecord():
@@ -80,6 +82,32 @@ def get_glove_matrix(save_path, glove_path, embed_size, progbar=None):
     return glove_matrix
 
 
+def find_and_replace_unknown_words(reviews, word_index, sentence_size, progbar=None):
+    processed_reviews = []
+
+    for review_index, review in enumerate(reviews):
+        words = review.split()
+
+        for index, word in enumerate(words[:sentence_size]):
+            if word not in word_index:
+                words[index] = UNK_TOKEN
+
+        review = ' '.join(words)
+        processed_reviews.append(review)
+
+        if progbar:
+            progbar.update(review_index + 1, [])
+
+    return processed_reviews
+
+
+def add_unknown_embedding(word_index, glove_matrix, vocab, embed_size):
+    vocab.append(UNK_TOKEN)
+    unknown_embedding = np.random.uniform(low=-1, high=1, size=embed_size)
+    glove_matrix.append(unknown_embedding.tolist())
+    word_index[UNK_TOKEN] = len(word_index) + 1
+
+
 def load_glove(glove_path, embed_size, progbar=None):
     word_index = dict()
     glove_matrix = []
@@ -97,6 +125,8 @@ def load_glove(glove_path, embed_size, progbar=None):
 
             if progbar:
                 progbar.update(index + 1, [])
+
+    add_unknown_embedding(word_index, glove_matrix, vocab, embed_size)
 
     return word_index, glove_matrix, vocab
 

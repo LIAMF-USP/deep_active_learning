@@ -10,6 +10,7 @@ from preprocessing.format_dataset import (remove_html_from_text,
                                           sentence_to_id_list,
                                           create_vocab_parser,
                                           SentenceTFRecord,
+                                          find_and_replace_unknown_words,
                                           load_glove,
                                           to_lower)
 from utils.progress_bar import Progbar
@@ -124,9 +125,16 @@ def transform_sentences(movie_reviews, vocabulary_processor):
     return transformed_sentences
 
 
-def create_vocabulary_processor(glove_file, embed_size, sentence_size):
+def load_glove_embeddings(user_args):
+    glove_file = user_args['glove_file']
+    embed_size = user_args['embed_size']
+
     print('Loading glove embeddings')
-    word_index, glove_matrix, vocab = load_glove(glove_file, embed_size)
+    return load_glove(glove_file, embed_size)
+
+
+def create_vocabulary_processor(vocab, user_args):
+    sentence_size = user_args['embed_size']
 
     print('Creating Vocabulary Parser')
     vocabulary_processor = create_vocab_parser(vocab, sentence_size)
@@ -212,6 +220,25 @@ def main():
     pos_reviews, neg_reviews = apply_data_preprocessing(user_args)
 
     """
+    Load GloVe embeddings.
+    """
+    word_index, glove_matrix, vocab = load_glove_embeddings(user_args)
+
+    """
+    Replace words that cannot be found on GloVe with the an special
+    unknown token.
+    """
+    sentence_size = user_args['sentence_size']
+    print('Find and replacing unknown words for positive reviews...')
+    progbar = Progbar(target=len(pos_reviews))
+    pos_reviews = find_and_replace_unknown_words(pos_reviews, word_index, sentence_size, progbar)
+    print()
+
+    print('Find and replacing unknown words for negative reviews...')
+    progbar = Progbar(target=len(neg_reviews))
+    neg_reviews = find_and_replace_unknown_words(neg_reviews, word_index, sentence_size, progbar)
+
+    """
     This step will join both pos_reviews and neg_reviews into a single list
     and add a label to each review sentence. Finally, these reviews will be
     shuffled.
@@ -227,17 +254,13 @@ def main():
         print('Creating validation set')
         create_validation_dir(user_args)
 
-    glove_file = user_args['glove_file']
-    sentence_size = user_args['sentence_size']
-    embed_size = user_args['embed_size']
-
     """
     We use the GloVe embeddings to create a vocubalary processor for our
     reviews. This vocabulary processor is responsible for turning each token
     in a review into an id correspoding to the word row position on the
     GloVe matrix.
     """
-    vocabulary_processor = create_vocabulary_processor(glove_file, embed_size, sentence_size)
+    vocabulary_processor = create_vocabulary_processor(vocab, user_args)
 
     """
     The reviews are turned into a list of ids.

@@ -1,5 +1,9 @@
 import unittest
 
+import numpy as np
+
+from unittest.mock import patch
+
 from preprocessing.format_dataset import (remove_html_from_text,
                                           remove_url_from_text,
                                           remove_special_characters_from_text,
@@ -8,6 +12,7 @@ from preprocessing.format_dataset import (remove_html_from_text,
                                           create_vocab_parser,
                                           sentence_to_id_list,
                                           to_lower,
+                                          find_and_replace_unknown_words,
                                           load_glove)
 
 
@@ -162,20 +167,34 @@ class FormatDatasetTest(unittest.TestCase):
 
         self.assertEqual(expected_string, actual_string)
 
-    def test_load_glove(self):
+    def test_find_and_replace_unknown_words(self):
+        word_index = {'a': 1, 'b': 2, 'c': 3, '<unk>': 4}
+        reviews = ['a b c d', 'e f g a', '3 5 c f']
+        sentence_size = 3
+
+        expected_reviews = ['a b c d', '<unk> <unk> <unk> a', '<unk> <unk> c f']
+        actual_reviews = find_and_replace_unknown_words(reviews, word_index, sentence_size)
+
+        self.assertEquals(expected_reviews, actual_reviews)
+
+    @patch('numpy.random.uniform')
+    def test_load_glove(self, mock_numpy):
+        mock_numpy.return_value = np.array([7, 8, 9])
         glove_path = 'tests/test_data/glove_test_data.txt'
         embed_size = 3
 
-        expected_word_index = {'a': 1, 'b': 2, 'c': 3}
+        expected_word_index = {'a': 1, 'b': 2, 'c': 3, '<unk>': 4}
         expected_glove_matrix = [[0, 0, 0],
                                  [0.1, 0.2, 0.3],
                                  [1, 2, 3],
-                                 [4, 5, 6]]
-        expected_vocab = ['a', 'b', 'c']
+                                 [4, 5, 6],
+                                 [7, 8, 9]]
+        expected_vocab = ['a', 'b', 'c', '<unk>']
 
         actual_word_index, actual_glove_matrix, actual_vocab = load_glove(glove_path, embed_size)
 
         self.assertEqual(expected_word_index, actual_word_index)
+
         self.assertEqual(expected_glove_matrix, actual_glove_matrix)
         self.assertEqual(expected_vocab, actual_vocab)
 
