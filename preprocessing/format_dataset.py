@@ -113,7 +113,13 @@ def add_space_between_characters(text):
     text = re.sub(r"!", " ! ", text)
     text = re.sub(r"\(", " ( ", text)
     text = re.sub(r"\)", " ) ", text)
+    text = re.sub(r";", " ; ", text)
+    text = re.sub(r"-", " - ", text)
     return re.sub(r"\?", " ? ", text)
+
+
+def remove_url_from_text(text):
+    return re.sub(r'https?\S+', ' ', text)
 
 
 def remove_html_from_text(text):
@@ -121,7 +127,7 @@ def remove_html_from_text(text):
 
 
 def remove_special_characters_from_text(text):
-    text = re.sub(r"[^A-Za-z0-9(),!?\'\`;-]", ' ', text)
+    text = re.sub(r"[^A-Za-z0-9(),!?\`;-]", ' ', text)
     return re.sub(r'\s{2,}', ' ', text)
 
 

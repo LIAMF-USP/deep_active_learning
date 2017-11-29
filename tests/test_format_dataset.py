@@ -1,6 +1,7 @@
 import unittest
 
 from preprocessing.format_dataset import (remove_html_from_text,
+                                          remove_url_from_text,
                                           remove_special_characters_from_text,
                                           add_space_between_characters,
                                           create_vocab_parser,
@@ -43,6 +44,12 @@ class FormatDatasetTest(unittest.TestCase):
         actual_string3 = remove_special_characters_from_text(text_string3)
 
         self.assertEqual(expected_string3, actual_string3)
+
+        text_string4 = "This movie is awesome!!!it is like a 'poem'"
+        expected_string4 = 'This movie is awesome!!!it is like a poem '
+        actual_string4 = remove_special_characters_from_text(text_string4)
+
+        self.assertEqual(expected_string4, actual_string4)
 
     def test_add_space_between_characters(self):
         text_string1 = "The director's cut is excellent."
@@ -110,6 +117,31 @@ class FormatDatasetTest(unittest.TestCase):
         actual_string11 = add_space_between_characters(text_string11)
 
         self.assertEqual(expected_string11, actual_string11)
+
+        text_string12 = "This is interesting;"
+        expected_string12 = "This is interesting ; "
+        actual_string12 = add_space_between_characters(text_string12)
+
+        self.assertEqual(expected_string12, actual_string12)
+
+        text_string13 = "This is an anti-civilisation movie"
+        expected_string13 = "This is an anti - civilisation movie"
+        actual_string13 = add_space_between_characters(text_string13)
+
+        self.assertEqual(expected_string13, actual_string13)
+
+    def test_remove_url_from_text(self):
+        text_string1 = 'Well, both series are now available on DVD http://www.replaydvd.co.uk/joking_apart_S1.htm'   # noqa
+        expected_string1 = 'Well, both series are now available on DVD  '
+        actual_string1 = remove_url_from_text(text_string1)
+
+        self.assertEqual(expected_string1, actual_string1)
+
+        text_string2 = 'movie on http://www.imdb.com/title/tt0073891/ for more information)'   # noqa
+        expected_string2 = 'movie on   for more information)'   # noqa
+        actual_string2 = remove_url_from_text(text_string2)
+
+        self.assertEqual(expected_string2, actual_string2)
 
     def test_full_setence_preprocessing(self):
         text_string = "What a great movie!!!<br /><br />This was an \"crazy\" experience."
