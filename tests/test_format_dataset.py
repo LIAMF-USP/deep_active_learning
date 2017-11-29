@@ -3,6 +3,7 @@ import unittest
 from preprocessing.format_dataset import (remove_html_from_text,
                                           remove_url_from_text,
                                           remove_special_characters_from_text,
+                                          create_unique_apostrophe,
                                           add_space_between_characters,
                                           create_vocab_parser,
                                           sentence_to_id_list,
@@ -142,6 +143,13 @@ class FormatDatasetTest(unittest.TestCase):
         actual_string2 = remove_url_from_text(text_string2)
 
         self.assertEqual(expected_string2, actual_string2)
+
+    def test_create_unique_apostrophe(self):
+        text_string = 'You`ve watched that movie ?'
+        expected_string = "You've watched that movie ?"
+        actual_string = create_unique_apostrophe(text_string)
+
+        self.assertEqual(expected_string, actual_string)
 
     def test_full_setence_preprocessing(self):
         text_string = "What a great movie!!!<br /><br />This was an \"crazy\" experience."

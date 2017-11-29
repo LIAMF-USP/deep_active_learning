@@ -5,6 +5,7 @@ import os
 from preprocessing.format_dataset import (remove_html_from_text,
                                           remove_url_from_text,
                                           remove_special_characters_from_text,
+                                          create_unique_apostrophe,
                                           add_space_between_characters,
                                           sentence_to_id_list,
                                           create_vocab_parser,
@@ -21,6 +22,7 @@ NEG_LABEL = 1
 def preprocess_review_text(review_text):
     formatted_text = remove_html_from_text(review_text)
     formatted_text = remove_url_from_text(formatted_text)
+    formatted_text = create_unique_apostrophe(formatted_text)
     formatted_text = add_space_between_characters(formatted_text)
     formatted_text = remove_special_characters_from_text(formatted_text)
     return to_lower(formatted_text)
