@@ -18,7 +18,8 @@ class LSTMConfig(Config):
 
         self.num_units = user_args['num_units']
         self.batch_size = user_args['batch_size']
-        self.max_length = user_args['max_length']
+        self.lstm_output_dropout = user_args['lstm_output_dropout']
+        self.lstm_state_dropout = user_args['lstm_state_dropout']
 
 
 class LSTMModel(SentimentAnalysisModel):
@@ -27,6 +28,22 @@ class LSTMModel(SentimentAnalysisModel):
         super().__init__(config)
 
         self.pretrained_embeddings = pretrained_embeddings
+
+    def add_placeholder(self):
+        self.lstm_output_dropout_placeholder = tf.placeholder(tf.float32)
+        self.lstm_state_dropout_placeholder = tf.placeholder(tf.float32)
+
+    def create_feed_dict(self, lstm_output_dropout=None, lstm_state_dropout=None):
+        if lstm_output_dropout is None:
+            lstm_output_dropout = self.config.lstm_output_dropout
+
+        if lstm_state_dropout is None:
+            lstm_state_dropout = self.config.lstm_state_dropout
+
+        feed_dict = {self.lstm_output_dropout_placeholder: lstm_output_dropout,
+                     self.lstm_state_dropout_placeholder: lstm_state_dropout}
+
+        return feed_dict
 
     def add_embedding(self, inputs):
         """
@@ -47,6 +64,12 @@ class LSTMModel(SentimentAnalysisModel):
 
         with tf.name_scope('lstm_layer'):
             lstm_cell = tf.nn.rnn_cell.LSTMCell(num_units)
+            drop_lstm_cell = tf.nn.rnn_cell.DropoutWrapper(
+                    lstm_cell,
+                    output_keep_prob=self.lstm_output_dropout_placeholder,
+                    state_keep_prob=self.lstm_state_dropout_placeholder,
+                    variational_recurrent=True,
+                    dtype=tf.float32)
             seqlen = sequence_length(x_hat)  # Slow graph creation, investigate
 
             """
@@ -57,7 +80,7 @@ class LSTMModel(SentimentAnalysisModel):
             Since we are using a single LSTM cell, this can be achieved by getting
             the output from the cell.h returned from the dynamic_rnn method.
             """
-            _, cell = tf.nn.dynamic_rnn(lstm_cell, x_hat,
+            _, cell = tf.nn.dynamic_rnn(drop_lstm_cell, x_hat,
                                         sequence_length=seqlen,
                                         dtype=tf.float32)
 
@@ -111,6 +134,7 @@ class LSTMModel(SentimentAnalysisModel):
             self._size = size
 
     def batch_evaluate(self, sess):
-        accuracy, total = sess.run([self._accuracy, self._size])
+        feed = self.create_feed_dict(lstm_output_dropout=1.0, lstm_state_dropout=1.0)
+        accuracy, total = sess.run([self._accuracy, self._size], feed_dict=feed)
 
         return accuracy, total

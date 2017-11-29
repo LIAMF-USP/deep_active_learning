@@ -88,6 +88,7 @@ class LSTMModelTest(tf.test.TestCase):
         config = Config(3, 3, 2)
 
         lstm_model = LSTMModel(config, embeddings)
+        lstm_model.add_placeholder()
         lstm_model.pred = batch_prediction
         lstm_model.add_evaluation_op(batch_labels)
 

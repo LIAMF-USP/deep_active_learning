@@ -134,6 +134,16 @@ def create_argument_parser():
                         type=int,
                         help='The number of classification classes')
 
+    parser.add_argument('-lod',
+                        '--lstm-output-dropout',
+                        type=float,
+                        help='Dropout value for LSTM output')
+
+    parser.add_argument('-lsd',
+                        '--lstm-state-dropout',
+                        type=float,
+                        help='Dropout value for LSTM state (Variational Dropout)')
+
     return parser
 
 

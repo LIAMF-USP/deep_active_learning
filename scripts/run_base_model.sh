@@ -20,13 +20,15 @@ GLOVE_FILE="data/glove.6B.50d.txt"
 GLOVE_PICKLE="data/glove.pkl"
 
 BATCH_SIZE=128
-NUM_EPOCHS=1
+NUM_EPOCHS=50
 EMBED_SIZE=50
-NUM_UNITS=64
+NUM_UNITS=128
 NUM_CLASSES=2
 MAX_LENGTH=250
 
 PERFORM_SHUFFLE=true
+LSTM_OUTPUT_DROPOUT=0.5
+LSTM_STATE_DROPOUT=0.7
 
 
 python base_model.py \
@@ -46,4 +48,6 @@ python base_model.py \
     --embed-size=${EMBED_SIZE} \
     --num-units=${NUM_UNITS} \
     --max-length=${MAX_LENGTH} \
-    --num-classes=${NUM_CLASSES}
+    --num-classes=${NUM_CLASSES} \
+    --lstm-output-dropout=${LSTM_OUTPUT_DROPOUT} \
+    --lstm-state-dropout=${LSTM_STATE_DROPOUT}

@@ -13,15 +13,21 @@ class Model:
         self.batch_data = None
         self.batch_labels = None
 
-    def add_evaluation_op(self, labels):
+    def add_placeholder(self):
         """
-        Method responsible for creating a graph to evaluate the model.
+        Method responsible for creating placeholder for the model.
         """
         raise NotImplementedError()
 
-    def create_feed_dict(self, data_batch, labels_batch=None):
+    def create_feed_dict(self):
         """
-        Create the feed dict for one step of training.
+        Method responsible for creating the feed_dict for the model.
+        """
+        raise NotImplementedError()
+
+    def add_evaluation_op(self, labels):
+        """
+        Method responsible for creating a graph to evaluate the model.
         """
         raise NotImplementedError()
 
@@ -69,13 +75,16 @@ class Model:
         Returns:
             loss: loss over the batch (a scalar)
         """
-        _, loss, summary = sess.run([self.train, self.loss, self.summ])
+
+        feed = self.create_feed_dict()
+        _, loss, summary = sess.run([self.train, self.loss, self.summ], feed_dict=feed)
         return loss, summary
 
     def build_graph(self, inputs, labels):
         """
         Create the computational graph for the model.
         """
+        self.add_placeholder()
         self.pred = self.add_prediction_op(inputs)  # Too slow, look into
         self.loss = self.add_loss_op(self.pred, labels)
         self.train = self.add_training_op(self.loss)
