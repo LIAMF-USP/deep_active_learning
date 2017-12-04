@@ -9,6 +9,7 @@ set -e
 #param=fast - Run fast tests (Default argument)
 
 PARAM=${1:-fast}
+export TF_CPP_MIN_LOG_LEVEL=3
 
 if [ $PARAM == "fast" ]; then
     echo "Running fast tests"
