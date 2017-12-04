@@ -19,6 +19,8 @@ TENSORBOARD_DIR='tensorboard_logs'
 GLOVE_FILE="data/glove.6B.50d.txt"
 GLOVE_PICKLE="data/glove.pkl"
 
+GRAPHS_DIR='graphs'
+
 BATCH_SIZE=128
 NUM_EPOCHS=25
 EMBED_SIZE=50
@@ -39,6 +41,7 @@ python base_model.py \
     --num-train=${NUM_TRAIN} \
     --num-validation=${NUM_VALIDATION} \
     --num-test=${NUM_TEST} \
+    --graphs-dir=${GRAPHS_DIR} \
     --model-name=${MODEL_NAME} \
     --tensorboard-dir=${TENSORBOARD_DIR} \
     --glove-file=${GLOVE_FILE} \

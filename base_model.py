@@ -7,6 +7,7 @@ from model.input_pipeline import InputPipeline
 from model.lstm_model import LSTMModel, LSTMConfig
 from preprocessing.format_dataset import get_glove_matrix
 from utils.tensorboard import create_unique_name
+from utils.graphs import accuracy_graph
 
 DEFAULT_BATCH_SIZE = 32
 DEFAULT_PERFORM_SHUFFLE = True
@@ -37,7 +38,15 @@ def initialize_tensorboard(user_args):
     writer = tf.summary.FileWriter(
         os.path.join(tensorboard_dir, tensorboard_save_name))
 
-    return writer
+    return writer, tensorboard_save_name
+
+
+def save_accuracy_graph(train_accuracies, val_accuracies, graphs_dir, save_name):
+    if not os.path.exists(graphs_dir):
+        os.makedirs(graphs_dir)
+
+    save_path = os.path.join(graphs_dir, save_name)
+    accuracy_graph(train_accuracies, val_accuracies, save_path)
 
 
 def create_argument_parser():
@@ -75,6 +84,11 @@ def create_argument_parser():
                         '--num-test',
                         type=int,
                         help='Number of test examples')
+
+    parser.add_argument('-gd',
+                        '--graphs-dir',
+                        type=str,
+                        help='The location of the graphs dir')
 
     parser.add_argument('-mn',
                         '--model-name',
@@ -170,7 +184,7 @@ def main():
     lstm_model = LSTMModel(lstm_config, glove_matrix)
 
     with tf.Session() as sess:
-        writer = initialize_tensorboard(user_args)
+        writer, save_name = initialize_tensorboard(user_args)
         writer.add_graph(sess.graph)
 
         lstm_model.prepare(sess, input_pipeline)
@@ -178,7 +192,10 @@ def main():
         init = tf.global_variables_initializer()
         sess.run(init)
 
-        lstm_model.fit(sess, input_pipeline, writer)
+        train_accuracies, val_accuracies = lstm_model.fit(sess, input_pipeline, writer)
+
+    graphs_dir = user_args['graphs_dir']
+    save_accuracy_graph(train_accuracies, val_accuracies, graphs_dir, save_name)
 
 
 if __name__ == '__main__':

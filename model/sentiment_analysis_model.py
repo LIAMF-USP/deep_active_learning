@@ -123,8 +123,6 @@ class SentimentAnalysisModel(Model):
         self.build_graph(batch_data, batch_labels)
 
     def fit(self, sess, dataset, writer=None):
-        best_score = 0
-
         train_accuracies = []
         val_accuracies = []
         print('Training model...')
@@ -145,9 +143,6 @@ class SentimentAnalysisModel(Model):
             print('Validation Accuracy for epoch {}: {}'.format(epoch, val_accuracy))
             print()
 
-            if val_accuracy > best_score:
-                best_score = val_accuracy
-
             sess.run(dataset.train_iterator)
 
         add_array_to_summary_writer(writer, val_accuracies, 'val_accuracy')
@@ -158,4 +153,4 @@ class SentimentAnalysisModel(Model):
             accuracy = self.evaluate(sess, dataset, 'test')
             print('Test Accuracy: {}'.format(accuracy))
 
-        return best_score
+        return train_accuracies, val_accuracies

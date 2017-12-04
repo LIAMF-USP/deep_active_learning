@@ -1,4 +1,5 @@
 data/*
+graphs/
 *.png
 *.pyc
 *.pyc
