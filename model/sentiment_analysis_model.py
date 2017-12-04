@@ -23,6 +23,7 @@ class Config:
         self.num_train = user_args['num_train']
         self.num_validation = user_args['num_validation']
         self.num_test = user_args['num_test']
+        self.use_test = user_args['use_test']
 
 
 class SentimentAnalysisModel(Model):
@@ -69,8 +70,12 @@ class SentimentAnalysisModel(Model):
         """
         ac_accuracy, ac_total = 0, 0
 
-        if dataset_type == 'val':
+        if dataset_type == 'train':
+            target = self.config.num_train
+        elif dataset_type == 'val':
             target = self.config.num_validation
+        else:
+            target = self.config.num_test
 
         if self.verbose:
             i = 0
@@ -120,25 +125,37 @@ class SentimentAnalysisModel(Model):
     def fit(self, sess, dataset, writer=None):
         best_score = 0
 
-        accuracies = []
+        train_accuracies = []
+        val_accuracies = []
         print('Training model...')
 
         for epoch in range(self.config.num_epochs):
             print('Running epoch {}'.format(epoch))
             self.run_epoch(sess, dataset, writer, epoch)
 
-            sess.run(dataset.validation_iterator)
-            accuracy = self.evaluate(sess, dataset)
-            accuracies.append(accuracy)
+            sess.run(dataset.train_iterator)
+            train_accuracy = self.evaluate(sess, dataset, 'train')
 
-            print('Accuracy for epoch {}: {}'.format(epoch, accuracy))
+            sess.run(dataset.validation_iterator)
+            val_accuracy = self.evaluate(sess, dataset, 'val')
+            val_accuracies.append(val_accuracy)
+            train_accuracies.append(train_accuracy)
+
+            print('Train Accuracy for epoch {}: {}'.format(epoch, train_accuracy))
+            print('Validation Accuracy for epoch {}: {}'.format(epoch, val_accuracy))
             print()
 
-            if accuracy > best_score:
-                best_score = accuracy
+            if val_accuracy > best_score:
+                best_score = val_accuracy
 
             sess.run(dataset.train_iterator)
 
-        add_array_to_summary_writer(writer, accuracies, 'accuracy')
+        add_array_to_summary_writer(writer, val_accuracies, 'val_accuracy')
+        add_array_to_summary_writer(writer, train_accuracies, 'train_accuracy')
+
+        if self.config.use_test:
+            sess.run(dataset.test_iterator)
+            accuracy = self.evaluate(sess, dataset, 'test')
+            print('Test Accuracy: {}'.format(accuracy))
 
         return best_score

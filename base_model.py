@@ -144,6 +144,11 @@ def create_argument_parser():
                         type=float,
                         help='Dropout value for LSTM state (Variational Dropout)')
 
+    parser.add_argument('-ut',
+                        '--use-test',
+                        type=bool,
+                        help='Define if the model should check accuracy on test dataset')
+
     return parser
 
 
