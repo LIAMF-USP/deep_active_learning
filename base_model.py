@@ -49,6 +49,10 @@ def save_accuracy_graph(train_accuracies, val_accuracies, graphs_dir, save_name)
     accuracy_graph(train_accuracies, val_accuracies, save_path)
 
 
+def bool_arguments(value):
+    return True if int(value) == 1 else False
+
+
 def create_argument_parser():
     parser = argparse.ArgumentParser()
 
@@ -124,7 +128,7 @@ def create_argument_parser():
 
     parser.add_argument('-ps',
                         '--perform-shuffle',
-                        type=bool,
+                        type=bool_arguments,
                         default=DEFAULT_PERFORM_SHUFFLE,
                         help='If the dataset should be shuffled before using it')
 
@@ -165,7 +169,7 @@ def create_argument_parser():
 
     parser.add_argument('-ut',
                         '--use-test',
-                        type=bool,
+                        type=bool_arguments,
                         help='Define if the model should check accuracy on test dataset')
 
     return parser
