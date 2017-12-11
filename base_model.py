@@ -167,6 +167,11 @@ def create_argument_parser():
                         type=float,
                         help='Dropout value for embedding layer')
 
+    parser.add_argument('-wd',
+                        '--weight-decay',
+                        type=float,
+                        help='Weight Decay value for L2 regularizer')
+
     parser.add_argument('-ut',
                         '--use-test',
                         type=bool_arguments,

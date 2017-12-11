@@ -22,11 +22,12 @@ GLOVE_PICKLE="data/glove.pkl"
 GRAPHS_DIR='graphs'
 
 BATCH_SIZE=128
-NUM_EPOCHS=25
+NUM_EPOCHS=50
 EMBED_SIZE=50
-NUM_UNITS=64
+NUM_UNITS=128
 NUM_CLASSES=2
 MAX_LENGTH=250
+WEIGHT_DECAY=0.000001
 
 PERFORM_SHUFFLE=1
 LSTM_OUTPUT_DROPOUT=0.5
@@ -56,4 +57,5 @@ python base_model.py \
     --lstm-output-dropout=${LSTM_OUTPUT_DROPOUT} \
     --lstm-state-dropout=${LSTM_STATE_DROPOUT} \
     --embedding-dropout=${EMBEDDINF_DROPOUT} \
+    --weight-decay=${WEIGHT_DECAY} \
     --use-test=${USE_TEST}

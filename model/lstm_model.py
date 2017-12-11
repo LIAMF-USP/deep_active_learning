@@ -21,6 +21,7 @@ class LSTMConfig(Config):
         self.lstm_output_dropout = user_args['lstm_output_dropout']
         self.lstm_state_dropout = user_args['lstm_state_dropout']
         self.embedding_dropout = user_args['embedding_dropout']
+        self.weight_decay = user_args['weight_decay']
 
 
 class LSTMModel(SentimentAnalysisModel):
@@ -117,11 +118,16 @@ class LSTMModel(SentimentAnalysisModel):
 
     def add_loss_op(self, pred, labels):
         with tf.name_scope('loss'):
-            loss = tf.reduce_mean(
+            cross_entropy = tf.reduce_mean(
                 tf.nn.sparse_softmax_cross_entropy_with_logits(
                     logits=pred,
                     labels=labels),
                 name='cross_entropy')
+
+            l2_loss = self.config.weight_decay * tf.add_n(
+                [tf.nn.l2_loss(v) for v in tf.trainable_variables()])
+
+            loss = cross_entropy + l2_loss
 
             tf.summary.scalar('loss', loss)
 
