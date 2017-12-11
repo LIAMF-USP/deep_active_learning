@@ -50,9 +50,9 @@ class InputPipeline:
         test_dataset = tf.data.TFRecordDataset(self.test_files).map(self.parser)
 
         if self.perform_shuffle:
-            train_dataset.shuffle(buffer_size=10000)
-            validation_dataset.shuffle(buffer_size=10000)
-            test_dataset.shuffle(buffer_size=10000)
+            train_dataset = train_dataset.shuffle(buffer_size=self.batch_size * 2)
+            validation_dataset = validation_dataset.shuffle(buffer_size=self.batch_size * 2)
+            test_dataset = test_dataset.shuffle(buffer_size=self.batch_size * 2)
 
         self.train_dataset = train_dataset.batch(self.batch_size)
         self.validation_dataset = validation_dataset.batch(self.batch_size)
