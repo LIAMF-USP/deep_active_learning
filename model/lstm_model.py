@@ -20,6 +20,7 @@ class LSTMConfig(Config):
         self.batch_size = user_args['batch_size']
         self.lstm_output_dropout = user_args['lstm_output_dropout']
         self.lstm_state_dropout = user_args['lstm_state_dropout']
+        self.embedding_dropout = user_args['embedding_dropout']
 
 
 class LSTMModel(SentimentAnalysisModel):
@@ -32,16 +33,22 @@ class LSTMModel(SentimentAnalysisModel):
     def add_placeholder(self):
         self.lstm_output_dropout_placeholder = tf.placeholder(tf.float32)
         self.lstm_state_dropout_placeholder = tf.placeholder(tf.float32)
+        self.embedding_dropout_placeholder = tf.placeholder(tf.float32)
 
-    def create_feed_dict(self, lstm_output_dropout=None, lstm_state_dropout=None):
+    def create_feed_dict(self, lstm_output_dropout=None, lstm_state_dropout=None,
+                         embedding_dropout=None):
         if lstm_output_dropout is None:
             lstm_output_dropout = self.config.lstm_output_dropout
 
         if lstm_state_dropout is None:
             lstm_state_dropout = self.config.lstm_state_dropout
 
+        if embedding_dropout is None:
+            embedding_dropout = self.config.embedding_dropout
+
         feed_dict = {self.lstm_output_dropout_placeholder: lstm_output_dropout,
-                     self.lstm_state_dropout_placeholder: lstm_state_dropout}
+                     self.lstm_state_dropout_placeholder: lstm_state_dropout,
+                     self.embedding_dropout_placeholder: embedding_dropout}
 
         return feed_dict
 
@@ -51,8 +58,10 @@ class LSTMModel(SentimentAnalysisModel):
         """
 
         with tf.name_scope('embeddings'):
-            base_embeddings = tf.Variable(self.pretrained_embeddings, dtype=tf.float32)
-            inputs = tf.nn.embedding_lookup(base_embeddings, inputs)
+            base_embeddings = tf.Variable(self.pretrained_embeddings, dtype=tf.float32,
+                                          trainable=False)
+            embeddings_dropout = tf.nn.dropout(base_embeddings, self.embedding_dropout_placeholder)
+            inputs = tf.nn.embedding_lookup(embeddings_dropout, inputs)
 
         return inputs
 
@@ -134,7 +143,8 @@ class LSTMModel(SentimentAnalysisModel):
             self._size = size
 
     def batch_evaluate(self, sess):
-        feed = self.create_feed_dict(lstm_output_dropout=1.0, lstm_state_dropout=1.0)
+        feed = self.create_feed_dict(lstm_output_dropout=1.0, lstm_state_dropout=1.0,
+                                     embedding_dropout=1.0)
         accuracy, total = sess.run([self._accuracy, self._size], feed_dict=feed)
 
         return accuracy, total

@@ -156,7 +156,12 @@ def create_argument_parser():
     parser.add_argument('-lsd',
                         '--lstm-state-dropout',
                         type=float,
-                        help='Dropout value for LSTM state (Variational Dropout)')
+                        help='Dropout value for lstm state (variational dropout)')
+
+    parser.add_argument('-ed',
+                        '--embedding-dropout',
+                        type=float,
+                        help='Dropout value for embedding layer')
 
     parser.add_argument('-ut',
                         '--use-test',

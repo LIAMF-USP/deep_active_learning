@@ -31,8 +31,8 @@ MAX_LENGTH=250
 PERFORM_SHUFFLE=true
 LSTM_OUTPUT_DROPOUT=0.5
 LSTM_STATE_DROPOUT=0.5
+EMBEDDINF_DROPOUT=0.5
 USE_TEST=false
-
 
 python base_model.py \
     --train-file=${TRAIN_FILE} \
@@ -55,4 +55,5 @@ python base_model.py \
     --num-classes=${NUM_CLASSES} \
     --lstm-output-dropout=${LSTM_OUTPUT_DROPOUT} \
     --lstm-state-dropout=${LSTM_STATE_DROPOUT} \
+    --embedding-dropout=${EMBEDDINF_DROPOUT} \
     --use-test=${USE_TEST}
