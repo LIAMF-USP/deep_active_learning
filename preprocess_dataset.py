@@ -134,7 +134,7 @@ def load_glove_embeddings(user_args):
 
 
 def create_vocabulary_processor(vocab, user_args):
-    sentence_size = user_args['embed_size']
+    sentence_size = user_args['sentence_size']
 
     print('Creating Vocabulary Parser')
     vocabulary_processor = create_vocab_parser(vocab, sentence_size)
@@ -178,18 +178,22 @@ def create_argument_parser():
                         '--data-dir',
                         type=str,
                         help='The location of the Large Movie Review Dataset')
+
     parser.add_argument('-dt',
                         '--dataset-type',
                         type=str,
                         help='The dataset that should be formatted: train or test')
+
     parser.add_argument('-gf',
                         '--glove-file',
                         type=str,
                         help='The location of the GloVe file')
+
     parser.add_argument('-es',
                         '--embed-size',
                         type=int,
                         help='The embedding size of the GloVe file')
+
     parser.add_argument('-s',
                         '--sentence-size',
                         type=int,
@@ -197,6 +201,7 @@ def create_argument_parser():
                               'If a sentence in our dataset is larger than this variable' +
                               'It will be cropped to this size. Otherwise, it will be padded' +
                               'with an special character'))
+
     parser.add_argument('-o',
                         '--output-dir',
                         type=str,
