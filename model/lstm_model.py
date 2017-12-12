@@ -59,8 +59,7 @@ class LSTMModel(SentimentAnalysisModel):
         """
 
         with tf.name_scope('embeddings'):
-            base_embeddings = tf.Variable(self.pretrained_embeddings, dtype=tf.float32,
-                                          trainable=False)
+            base_embeddings = tf.Variable(self.pretrained_embeddings, dtype=tf.float32)
             embeddings_dropout = tf.nn.dropout(base_embeddings, self.embedding_dropout_placeholder)
             inputs = tf.nn.embedding_lookup(embeddings_dropout, inputs)
 
@@ -101,11 +100,12 @@ class LSTMModel(SentimentAnalysisModel):
             tf.summary.histogram('lstm_output', lstm_output)
 
         with tf.name_scope('output_layer'):
+            initializer = tf.contrib.layers.xavier_initializer()
             weight = tf.Variable(
-                tf.truncated_normal([num_units, num_classes]),
+                initializer(shape=[num_units, num_classes]),
                 name='weight')
             bias = tf.Variable(
-                tf.constant(0.1, shape=[num_classes]),
+                initializer(shape=[num_classes]),
                 name='bias')
 
             prediction = tf.matmul(lstm_output, weight) + bias
