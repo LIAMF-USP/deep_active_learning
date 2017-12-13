@@ -46,16 +46,22 @@ class FormatDatasetTest(unittest.TestCase):
         self.assertEqual(expected_string2, actual_string2)
 
         text_string3 = 'I love this movie ;-)'
-        expected_string3 = 'I love this movie ;-)'
+        expected_string3 = 'I love this movie )'
         actual_string3 = remove_special_characters_from_text(text_string3)
 
         self.assertEqual(expected_string3, actual_string3)
 
         text_string4 = "This movie is awesome!!!it is like a 'poem'"
-        expected_string4 = 'This movie is awesome!!!it is like a poem '
+        expected_string4 = "This movie is awesome!!!it is like a 'poem'"
         actual_string4 = remove_special_characters_from_text(text_string4)
 
         self.assertEqual(expected_string4, actual_string4)
+
+        text_string5 = "I don't know about this movie"
+        expected_string5 = "I don't know about this movie"
+        actual_string5 = remove_special_characters_from_text(text_string5)
+
+        self.assertEqual(expected_string5, actual_string5)
 
     def test_add_space_between_characters(self):
         text_string1 = "The director's cut is excellent."
@@ -157,8 +163,8 @@ class FormatDatasetTest(unittest.TestCase):
         self.assertEqual(expected_string, actual_string)
 
     def test_full_setence_preprocessing(self):
-        text_string = "What a great movie!!!<br /><br />This was an \"crazy\" experience."
-        expected_string = "what a great movie ! ! ! this was an crazy experience "
+        text_string = "What a great movie!!!<br /><br />This was a \"crazy\" experience."
+        expected_string = "what a great movie ! ! ! this was a crazy experience "
 
         text_string = remove_html_from_text(text_string)
         text_string = add_space_between_characters(text_string)

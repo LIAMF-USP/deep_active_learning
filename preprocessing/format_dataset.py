@@ -11,7 +11,6 @@ UNK_TOKEN = '<unk>'
 
 
 class SentenceTFRecord():
-
     def __init__(self, reviews, output_path, progbar=None):
         self.reviews = reviews
         self.output_path = output_path
@@ -160,7 +159,7 @@ def create_unique_apostrophe(text):
 
 
 def remove_special_characters_from_text(text):
-    text = re.sub(r"[^A-Za-z0-9(),!?;-]", ' ', text)
+    text = re.sub(r"[^A-Za-z0-9(),!?\']", ' ', text)
     return re.sub(r'\s{2,}', ' ', text)
 
 

@@ -9,10 +9,10 @@ DATA_DIR="data/aclImdb"
 DATASET_TRAIN="train"
 DATASET_TEST="test"
 
-GLOVE_FILE="data/glove.6B.50d.txt"
-SENTENCE_SIZE=250
+GLOVE_FILE="data/glove.6B.100d.txt"
+SENTENCE_SIZE=1000
 OUTPUT_DIR="data/aclImdb_formatted"
-EMBED_SIZE=50
+EMBED_SIZE=100
 
 echo "Preprocessing training data..."
 python preprocess_dataset.py \
