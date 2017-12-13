@@ -20,8 +20,8 @@ class SentenceTFRecord():
     def parse_sentences(self):
         writer = tf.python_io.TFRecordWriter(self.output_path)
 
-        for index, (sentence, label) in enumerate(self.reviews):
-            example = self.make_example(sentence, label)
+        for index, (sentence, label, size) in enumerate(self.reviews):
+            example = self.make_example(sentence, label, size)
 
             writer.write(example.SerializeToString())
 
@@ -30,11 +30,10 @@ class SentenceTFRecord():
 
         writer.close()
 
-    def make_example(self, sentence, label):
+    def make_example(self, sentence, label, size):
         example = tf.train.SequenceExample()
 
-        sentence_size = len(sentence)
-        example.context.feature['size'].int64_list.value.append(sentence_size)
+        example.context.feature['size'].int64_list.value.append(size)
         example.context.feature['label'].int64_list.value.append(label)
 
         sentence_tokens = example.feature_lists.feature_list['tokens']

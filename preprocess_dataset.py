@@ -104,7 +104,7 @@ def create_unified_dataset(pos_reviews, neg_reviews):
     return all_reviews
 
 
-def transform_sentences(movie_reviews, vocabulary_processor):
+def transform_sentences(movie_reviews, sentence_size, vocabulary_processor):
     transformed_sentences = []
     progbar = Progbar(target=len(movie_reviews))
 
@@ -119,7 +119,12 @@ def transform_sentences(movie_reviews, vocabulary_processor):
         review_id_list = list(review_id_list)
         review_id_list = review_id_list[0].tolist()
 
-        transformed_sentences.append((review_id_list, label))
+        size = sentence_size
+
+        if len(review.split()) < sentence_size:
+            size = len(review.split())
+
+        transformed_sentences.append((review_id_list, label, size))
         progbar.update(index + 1, [])
 
     return transformed_sentences
@@ -270,13 +275,15 @@ def main():
     """
     The reviews are turned into a list of ids.
     """
+
     print('Transforming {} reviews into list of ids'.format(dataset_type))
-    all_reviews = transform_sentences(all_reviews, vocabulary_processor)
+    all_reviews = transform_sentences(all_reviews, sentence_size, vocabulary_processor)
     print()
 
     if not is_test:
         print('Transforming validation reviews into list of ids')
-        validation_reviews = transform_sentences(validation_reviews, vocabulary_processor)
+        validation_reviews = transform_sentences(validation_reviews, sentence_size,
+                                                 vocabulary_processor)
         print()
 
     """

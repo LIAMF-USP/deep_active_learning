@@ -41,8 +41,9 @@ class InputPipeline:
 
         tokens = tfrecord_parsed[1]['tokens']
         label = tfrecord_parsed[0]['label']
+        size = tfrecord_parsed[0]['size']
 
-        return tokens, label
+        return tokens, label, size
 
     def create_datasets(self):
         train_dataset = tf.data.TFRecordDataset(self.train_files).map(self.parser)
@@ -67,9 +68,9 @@ class InputPipeline:
         self._test_iterator_op = self._iterator.make_initializer(self.test_dataset)
 
     def make_batch(self):
-        tokens_batch, labels_batch = self._iterator.get_next()
+        tokens_batch, labels_batch, size_batch = self._iterator.get_next()
 
-        return tokens_batch, labels_batch
+        return tokens_batch, labels_batch, size_batch
 
     def build_pipeline(self):
         self.create_datasets()

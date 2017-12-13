@@ -3,14 +3,6 @@ import tensorflow as tf
 from model.sentiment_analysis_model import SentimentAnalysisModel, Config
 
 
-def sequence_length(x_hat):
-    used = tf.sign(tf.reduce_max(tf.abs(x_hat), 2))
-    length = tf.reduce_sum(used, axis=1)
-    length = tf.cast(length, tf.int32)
-
-    return length
-
-
 class LSTMConfig(Config):
 
     def __init__(self, user_args):
@@ -65,7 +57,7 @@ class LSTMModel(SentimentAnalysisModel):
 
         return inputs
 
-    def add_prediction_op(self, inputs):
+    def add_prediction_op(self, inputs, size):
         num_units = self.config.num_units
         num_classes = self.config.num_classes
 
@@ -79,7 +71,6 @@ class LSTMModel(SentimentAnalysisModel):
                     state_keep_prob=self.lstm_state_dropout_placeholder,
                     variational_recurrent=True,
                     dtype=tf.float32)
-            seqlen = sequence_length(x_hat)  # Slow graph creation, investigate
 
             """
             The dynamic_rnn outputs a 0 for every output after it has reached
@@ -90,7 +81,7 @@ class LSTMModel(SentimentAnalysisModel):
             the output from the cell.h returned from the dynamic_rnn method.
             """
             _, cell = tf.nn.dynamic_rnn(drop_lstm_cell, x_hat,
-                                        sequence_length=seqlen,
+                                        sequence_length=size,
                                         dtype=tf.float32)
 
             """

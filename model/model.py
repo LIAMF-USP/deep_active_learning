@@ -80,12 +80,12 @@ class Model:
         _, loss, summary = sess.run([self.train, self.loss, self.summ], feed_dict=feed)
         return loss, summary
 
-    def build_graph(self, inputs, labels):
+    def build_graph(self, inputs, labels, size):
         """
         Create the computational graph for the model.
         """
         self.add_placeholder()
-        self.pred = self.add_prediction_op(inputs)  # Too slow, look into
+        self.pred = self.add_prediction_op(inputs, size)  # Too slow, look into
         self.loss = self.add_loss_op(self.pred, labels)
         self.train = self.add_training_op(self.loss)
 

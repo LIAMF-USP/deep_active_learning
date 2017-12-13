@@ -119,8 +119,8 @@ class SentimentAnalysisModel(Model):
 
     def prepare(self, sess, dataset):
         sess.run(dataset.train_iterator)
-        batch_data, batch_labels = dataset.make_batch()
-        self.build_graph(batch_data, batch_labels)
+        data_batch, labels_batch, size_batch = dataset.make_batch()
+        self.build_graph(data_batch, labels_batch, size_batch)
 
     def fit(self, sess, dataset, writer=None):
         train_accuracies = []
