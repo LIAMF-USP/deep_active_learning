@@ -15,8 +15,8 @@ class LSTMModelTest(tf.test.TestCase):
                       [7, 8, 9],
                       [10, 11, 12]]
 
-        Config = namedtuple('Config', ['max_length', 'num_units', 'num_classes'])
-        config = Config(3, 3, 2)
+        Config = namedtuple('Config', ['num_units', 'num_classes'])
+        config = Config(3, 2)
 
         lstm_model = LSTMModel(config, embeddings)
         lstm_model.add_placeholder()
@@ -60,8 +60,8 @@ class LSTMModelTest(tf.test.TestCase):
                                      [0.2, 0.8], [0.7, 0.3],
                                      [0.8, 0.2]])
 
-        Config = namedtuple('Config', ['max_length', 'num_units', 'num_classes'])
-        config = Config(3, 3, 2)
+        Config = namedtuple('Config', ['num_units', 'num_classes'])
+        config = Config(3, 2)
 
         lstm_model = LSTMModel(config, embeddings)
         lstm_model.add_placeholder()

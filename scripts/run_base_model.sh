@@ -26,7 +26,6 @@ NUM_EPOCHS=18
 EMBED_SIZE=100
 NUM_UNITS=128
 NUM_CLASSES=2
-MAX_LENGTH=250
 WEIGHT_DECAY=0.000001
 
 PERFORM_SHUFFLE=1
@@ -52,7 +51,6 @@ python base_model.py \
     --perform-shuffle=${PERFORM_SHUFFLE} \
     --embed-size=${EMBED_SIZE} \
     --num-units=${NUM_UNITS} \
-    --max-length=${MAX_LENGTH} \
     --num-classes=${NUM_CLASSES} \
     --lstm-output-dropout=${LSTM_OUTPUT_DROPOUT} \
     --lstm-state-dropout=${LSTM_STATE_DROPOUT} \

@@ -142,11 +142,6 @@ def create_argument_parser():
                         type=int,
                         help='The number of hidden units in the LSTM layer')
 
-    parser.add_argument('-ml',
-                        '--max-length',
-                        type=int,
-                        help='The maximum size of the sentece to be parsed')
-
     parser.add_argument('-nc',
                         '--num-classes',
                         type=int,
