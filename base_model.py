@@ -5,7 +5,7 @@ import tensorflow as tf
 
 from model.input_pipeline import InputPipeline
 from model.lstm_model import LSTMModel, LSTMConfig
-from preprocessing.format_dataset import get_glove_matrix
+from word_embedding.word_embedding import get_embedding
 from utils.tensorboard import create_unique_name
 from utils.graphs import accuracy_graph
 
@@ -104,15 +104,15 @@ def create_argument_parser():
                         type=str,
                         help='Directory to save tensorboard information')
 
-    parser.add_argument('-gf',
-                        '--glove-file',
+    parser.add_argument('-ef',
+                        '--embedding-file',
                         type=str,
-                        help='The path of the GloVe file')
+                        help='The path of the embedding file')
 
-    parser.add_argument('-gpkl',
-                        '--glove-pickle',
+    parser.add_argument('-ekl',
+                        '--embedding-pickle',
                         type=str,
-                        help='The path of GloVe matrix pickle file')
+                        help='The path of embedding matrix pickle file')
 
     parser.add_argument('-bs',
                         '--batch-size',
@@ -135,7 +135,7 @@ def create_argument_parser():
     parser.add_argument('-es',
                         '--embed-size',
                         type=int,
-                        help='The embedding size of the glove matrix')
+                        help='The embedding size of the embedding matrix')
 
     parser.add_argument('-nu',
                         '--num-units',
@@ -183,14 +183,15 @@ def main():
     input_pipeline = create_dataset(user_args)
     lstm_config = LSTMConfig(user_args)
 
-    print('Loading glove file...')
-    glove_file = user_args['glove_file']
+    print('Loading embedding file...')
+    embedding_file = user_args['embedding_file']
     embed_size = user_args['embed_size']
-    glove_pickle = user_args['glove_pickle']
-    glove_matrix = get_glove_matrix(glove_pickle, glove_file, embed_size)
+    embedding_pickle = user_args['embedding_pickle']
+    embedding_matrix = get_embedding(
+        embedding_file, embed_size, embedding_pickle, only_embedding=True)
 
     print('Creating LSTM model...')
-    lstm_model = LSTMModel(lstm_config, glove_matrix)
+    lstm_model = LSTMModel(lstm_config, embedding_matrix)
 
     with tf.Session() as sess:
         writer, save_name = initialize_tensorboard(user_args)

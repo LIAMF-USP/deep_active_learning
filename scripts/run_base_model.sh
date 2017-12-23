@@ -16,23 +16,25 @@ NUM_TEST=25000
 MODEL_NAME='base_model'
 TENSORBOARD_DIR='tensorboard_logs'
 
-GLOVE_FILE="data/glove.6B.100d.txt"
-GLOVE_PICKLE="data/glove.pkl"
+EMBEDDING_FILE="data/glove.6B.100d.txt"
+EMBEDDING_PICKLE="data/glove.pkl"
 
 GRAPHS_DIR='graphs'
 
-BATCH_SIZE=128
 NUM_EPOCHS=18
 EMBED_SIZE=100
-NUM_UNITS=128
 NUM_CLASSES=2
-WEIGHT_DECAY=0.000001
 
 PERFORM_SHUFFLE=1
+USE_TEST=0
+
+#Hyper-parameters
+BATCH_SIZE=128
+NUM_UNITS=128
 LSTM_OUTPUT_DROPOUT=0.5
 LSTM_STATE_DROPOUT=0.5
 EMBEDDINF_DROPOUT=0.5
-USE_TEST=0
+WEIGHT_DECAY=0.000001
 
 python base_model.py \
     --train-file=${TRAIN_FILE} \
@@ -44,8 +46,8 @@ python base_model.py \
     --graphs-dir=${GRAPHS_DIR} \
     --model-name=${MODEL_NAME} \
     --tensorboard-dir=${TENSORBOARD_DIR} \
-    --glove-file=${GLOVE_FILE} \
-    --glove-pickle=${GLOVE_PICKLE} \
+    --embedding-file=${EMBEDDING_FILE} \
+    --embedding-pickle=${EMBEDDING_PICKLE} \
     --batch-size=${BATCH_SIZE} \
     --num-epochs=${NUM_EPOCHS} \
     --perform-shuffle=${PERFORM_SHUFFLE} \

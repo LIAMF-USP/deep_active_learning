@@ -11,8 +11,8 @@ from preprocessing.format_dataset import (remove_html_from_text,
                                           create_vocab_parser,
                                           SentenceTFRecord,
                                           find_and_replace_unknown_words,
-                                          load_glove,
                                           to_lower)
+from word_embedding.word_embedding import get_embedding
 from utils.progress_bar import Progbar
 
 
@@ -130,12 +130,12 @@ def transform_sentences(movie_reviews, sentence_size, vocabulary_processor):
     return transformed_sentences
 
 
-def load_glove_embeddings(user_args):
-    glove_file = user_args['glove_file']
+def load_embeddings(user_args):
+    embedding_file = user_args['embedding_file']
     embed_size = user_args['embed_size']
 
-    print('Loading glove embeddings')
-    return load_glove(glove_file, embed_size)
+    print('Loading word embeddings')
+    return get_embedding(embedding_file, embed_size)
 
 
 def create_vocabulary_processor(vocab, user_args):
@@ -189,15 +189,15 @@ def create_argument_parser():
                         type=str,
                         help='The dataset that should be formatted: train or test')
 
-    parser.add_argument('-gf',
-                        '--glove-file',
+    parser.add_argument('-ef',
+                        '--embedding-file',
                         type=str,
-                        help='The location of the GloVe file')
+                        help='The location of the embedding file')
 
     parser.add_argument('-es',
                         '--embed-size',
                         type=int,
-                        help='The embedding size of the GloVe file')
+                        help='The embedding size of the embedding file')
 
     parser.add_argument('-s',
                         '--sentence-size',
@@ -232,7 +232,7 @@ def main():
     """
     Load GloVe embeddings.
     """
-    word_index, glove_matrix, vocab = load_glove_embeddings(user_args)
+    word_index, glove_matrix, vocab = load_embeddings(user_args)
 
     """
     Replace words that cannot be found on GloVe with the an special

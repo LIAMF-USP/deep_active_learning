@@ -12,8 +12,8 @@ from preprocessing.format_dataset import (remove_html_from_text,
                                           create_vocab_parser,
                                           sentence_to_id_list,
                                           to_lower,
-                                          find_and_replace_unknown_words,
-                                          load_glove)
+                                          find_and_replace_unknown_words)
+from word_embedding.word_embedding import get_embedding
 
 
 class FormatDatasetTest(unittest.TestCase):
@@ -197,7 +197,7 @@ class FormatDatasetTest(unittest.TestCase):
                                  [7, 8, 9]]
         expected_vocab = ['a', 'b', 'c', '<unk>']
 
-        actual_word_index, actual_glove_matrix, actual_vocab = load_glove(glove_path, embed_size)
+        actual_word_index, actual_glove_matrix, actual_vocab = get_embedding(glove_path, embed_size)
 
         self.assertEqual(expected_word_index, actual_word_index)
 
@@ -206,7 +206,7 @@ class FormatDatasetTest(unittest.TestCase):
 
     def test_create_vocab_parser(self):
         embed_size = 50
-        word_index, glove_matrix, vocab = load_glove('data/glove.6B.50d.txt', embed_size)
+        word_index, glove_matrix, vocab = get_embedding('data/glove.6B.50d.txt', embed_size)
         vocabulary_processor = create_vocab_parser(vocab, 10)
 
         vp_size = len(vocabulary_processor.vocabulary_._mapping.keys())
@@ -218,7 +218,7 @@ class FormatDatasetTest(unittest.TestCase):
     def test_sentence_to_id_list(self):
         sentence_size = 10
         embed_size = 50
-        word_index, glove_matrix, vocab = load_glove('data/glove.6B.50d.txt', embed_size)
+        word_index, glove_matrix, vocab = get_embedding('data/glove.6B.50d.txt', embed_size)
         vocabulary_processor = create_vocab_parser(vocab, sentence_size)
 
         sentence = 'i love you'
