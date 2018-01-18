@@ -28,6 +28,10 @@ NUM_CLASSES=2
 PERFORM_SHUFFLE=1
 USE_TEST=0
 
+#Bucket paramets
+BUCKET_WIDTH=30
+NUM_BUCKETS=30
+
 #Hyper-parameters
 BATCH_SIZE=128
 NUM_UNITS=128
@@ -58,4 +62,6 @@ python base_model.py \
     --lstm-state-dropout=${LSTM_STATE_DROPOUT} \
     --embedding-dropout=${EMBEDDINF_DROPOUT} \
     --weight-decay=${WEIGHT_DECAY} \
+    --bucket-width=${BUCKET_WIDTH} \
+    --num-buckets=${NUM_BUCKETS} \
     --use-test=${USE_TEST}

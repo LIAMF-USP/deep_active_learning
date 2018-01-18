@@ -1,7 +1,5 @@
 import tensorflow as tf
 
-from math import ceil
-
 from model.model import Model
 from utils.progress_bar import Progbar
 from utils.tensorboard import add_array_to_summary_writer
@@ -52,7 +50,7 @@ class SentimentAnalysisModel(Model):
         """
         return NotImplementedError()
 
-    def evaluate(self, sess, dataset, dataset_type='val'):
+    def evaluate(self, sess, dataset, total_batch):
         """
         This method will be used to calculate the accuracy metric over
         a batch of examples from the validation or test set.
@@ -64,22 +62,15 @@ class SentimentAnalysisModel(Model):
             sess: A Tensorflow session
             dataset: A tf.data.Dataset object containing the validation or
                      test data
-            dataset_type: A variable indicating which dataset is being evaluated
+            total_batch: Variable indicating number of batches for the dataset
         Returns:
             accuracy: The mean accuracy for the dataset
         """
         ac_accuracy, ac_total = 0, 0
 
-        if dataset_type == 'train':
-            target = self.config.num_train
-        elif dataset_type == 'val':
-            target = self.config.num_validation
-        else:
-            target = self.config.num_test
-
         if self.verbose:
             i = 0
-            progbar = Progbar(target=ceil(target / self.config.batch_size))
+            progbar = Progbar(target=total_batch)
 
         while True:
             try:
@@ -95,9 +86,7 @@ class SentimentAnalysisModel(Model):
             except tf.errors.OutOfRangeError:
                 return ac_accuracy / ac_total
 
-    def run_epoch(self, sess, dataset, writer, epoch):
-        total_batch = ceil(self.config.num_train / self.config.batch_size)
-
+    def run_epoch(self, sess, dataset, writer, epoch, total_batch):
         if self.verbose:
             progbar = Progbar(target=total_batch)
             i = 0
@@ -129,13 +118,15 @@ class SentimentAnalysisModel(Model):
 
         for epoch in range(self.config.num_epochs):
             print('Running epoch {}'.format(epoch))
-            self.run_epoch(sess, dataset, writer, epoch)
+            total_batch = dataset.train_batches
+            self.run_epoch(sess, dataset, writer, epoch, total_batch)
 
             sess.run(dataset.train_iterator)
-            train_accuracy = self.evaluate(sess, dataset, 'train')
+            train_accuracy = self.evaluate(sess, dataset, total_batch)
 
             sess.run(dataset.validation_iterator)
-            val_accuracy = self.evaluate(sess, dataset, 'val')
+            total_batch = dataset.validation_batches
+            val_accuracy = self.evaluate(sess, dataset, total_batch)
             val_accuracies.append(val_accuracy)
             train_accuracies.append(train_accuracy)
 
@@ -150,7 +141,8 @@ class SentimentAnalysisModel(Model):
 
         if self.config.use_test:
             sess.run(dataset.test_iterator)
-            accuracy = self.evaluate(sess, dataset, 'test')
+            total_batch = dataset.test_batches
+            accuracy = self.evaluate(sess, dataset, total_batch)
             print('Test Accuracy: {}'.format(accuracy))
 
         return train_accuracies, val_accuracies

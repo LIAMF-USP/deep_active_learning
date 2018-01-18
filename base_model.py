@@ -22,9 +22,12 @@ def create_dataset(user_args):
     test_file = user_args['test_file']
     batch_size = user_args['batch_size']
     perform_shuffle = user_args['perform_shuffle']
+    bucket_width = user_args['bucket_width']
+    num_buckets = user_args['num_buckets']
 
     input_pipeline = InputPipeline(
-        train_file, validation_file, test_file, batch_size, perform_shuffle)
+        train_file, validation_file, test_file, batch_size, perform_shuffle,
+        bucket_width, num_buckets)
     input_pipeline.build_pipeline()
 
     return input_pipeline
@@ -167,6 +170,16 @@ def create_argument_parser():
                         type=float,
                         help='Weight Decay value for L2 regularizer')
 
+    parser.add_argument('-bw',
+                        '--bucket-width',
+                        type=int,
+                        help='The width use to define a bucket id for a given movie review')
+
+    parser.add_argument('-nb',
+                        '--num-buckets',
+                        type=int,
+                        help='The maximum number of buckets allowed')
+
     parser.add_argument('-ut',
                         '--use-test',
                         type=bool_arguments,
@@ -181,7 +194,8 @@ def main():
 
     print('Creating dataset...')
     input_pipeline = create_dataset(user_args)
-    lstm_config = LSTMConfig(user_args)
+    print('Calculating number of batches...')
+    input_pipeline.get_datasets_num_batches()
 
     print('Loading embedding file...')
     embedding_file = user_args['embedding_file']
@@ -191,6 +205,7 @@ def main():
         embedding_file, embed_size, embedding_pickle, only_embedding=True)
 
     print('Creating LSTM model...')
+    lstm_config = LSTMConfig(user_args)
     lstm_model = LSTMModel(lstm_config, embedding_matrix)
 
     with tf.Session() as sess:
