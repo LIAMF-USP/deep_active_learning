@@ -38,35 +38,22 @@ class SentenceTFRecord():
         return example
 
 
-def sentence_to_id_list(sentence, vocabulary_processor):
-    if type(sentence) is not list:
-        sentence = [sentence]
-
-    return vocabulary_processor.transform(sentence)
-
-
-def create_vocab_parser(vocab, sentence_size):
-    """
-    The tensorflow method has a default tokenizer that
-    removes some word from the glove vocab files, this function
-    guarantees that no word is removed from it.
-    """
-    def tokenizer2(text):
-        for value in text:
-            yield value.split()
-
-    vocabulary_processor = tf.contrib.learn.preprocessing.VocabularyProcessor(
-        max_document_length=sentence_size, tokenizer_fn=tokenizer2)
-    vocabulary_processor.fit(vocab)
-
-    return vocabulary_processor
+def sentence_to_id_list(sentence, word_index):
+    return [word_index[word] for word in sentence.split()]
 
 
 def find_and_replace_unknown_words(reviews, word_index, sentence_size, progbar=None):
     processed_reviews = []
+    dynamic_sentence_size = False
+
+    if not sentence_size:
+        dynamic_sentence_size = True
 
     for review_index, review in enumerate(reviews):
         words = review.split()
+
+        if dynamic_sentence_size:
+            sentence_size = len(words)
 
         for index, word in enumerate(words[:sentence_size]):
             if word not in word_index:

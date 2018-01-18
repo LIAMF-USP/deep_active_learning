@@ -9,7 +9,6 @@ from preprocessing.format_dataset import (remove_html_from_text,
                                           remove_special_characters_from_text,
                                           create_unique_apostrophe,
                                           add_space_between_characters,
-                                          create_vocab_parser,
                                           sentence_to_id_list,
                                           to_lower,
                                           find_and_replace_unknown_words)
@@ -183,6 +182,14 @@ class FormatDatasetTest(unittest.TestCase):
 
         self.assertEquals(expected_reviews, actual_reviews)
 
+        reviews = ['a b c d', 'e f g a', '3 5 c f']
+        sentence_size = None
+
+        expected_reviews = ['a b c <unk>', '<unk> <unk> <unk> a', '<unk> <unk> c <unk>']
+        actual_reviews = find_and_replace_unknown_words(reviews, word_index, sentence_size)
+
+        self.assertEquals(expected_reviews, actual_reviews)
+
     @patch('numpy.random.uniform')
     def test_load_glove(self, mock_numpy):
         mock_numpy.return_value = np.array([7, 8, 9])
@@ -204,42 +211,26 @@ class FormatDatasetTest(unittest.TestCase):
         self.assertEqual(expected_glove_matrix, actual_glove_matrix)
         self.assertEqual(expected_vocab, actual_vocab)
 
-    def test_create_vocab_parser(self):
-        embed_size = 50
-        word_index, glove_matrix, vocab = get_embedding('data/glove.6B.50d.txt', embed_size)
-        vocabulary_processor = create_vocab_parser(vocab, 10)
-
-        vp_size = len(vocabulary_processor.vocabulary_._mapping.keys())
-        vocab_size = len(vocab)
-
-        self.assertEqual(vp_size, vocab_size + 1)
-    test_create_vocab_parser.slow = 1
-
     def test_sentence_to_id_list(self):
-        sentence_size = 10
         embed_size = 50
         word_index, glove_matrix, vocab = get_embedding('data/glove.6B.50d.txt', embed_size)
-        vocabulary_processor = create_vocab_parser(vocab, sentence_size)
 
         sentence = 'i love you'
         parsed_sentence = sentence.split()
-        id_sentence = list(sentence_to_id_list(sentence, vocabulary_processor))[0]
+        id_sentence = sentence_to_id_list(sentence, word_index)
 
-        self.assertEqual(len(id_sentence), sentence_size)
+        self.assertEqual(len(parsed_sentence), len(id_sentence))
 
         for index, value in enumerate(parsed_sentence):
             self.assertEqual(word_index[parsed_sentence[index]], id_sentence[index])
 
-        sentence_size = 250
-        vocabulary_processor = create_vocab_parser(vocab, sentence_size)
-
         with open('tests/test_data/example_movie_review.txt', 'r') as sentence_file:
             sentence = sentence_file.read()
 
-        id_sentence = list(sentence_to_id_list(sentence, vocabulary_processor))[0]
+        id_sentence = sentence_to_id_list(sentence, word_index)
         parsed_sentence = sentence.split()
 
-        self.assertEqual(len(id_sentence), sentence_size)
+        self.assertEqual(len(parsed_sentence), len(id_sentence))
 
         for index, value in enumerate(parsed_sentence):
             self.assertEqual(word_index[parsed_sentence[index]], id_sentence[index])

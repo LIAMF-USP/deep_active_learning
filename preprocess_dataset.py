@@ -8,7 +8,6 @@ from preprocessing.format_dataset import (remove_html_from_text,
                                           create_unique_apostrophe,
                                           add_space_between_characters,
                                           sentence_to_id_list,
-                                          create_vocab_parser,
                                           SentenceTFRecord,
                                           find_and_replace_unknown_words,
                                           to_lower)
@@ -104,25 +103,13 @@ def create_unified_dataset(pos_reviews, neg_reviews):
     return all_reviews
 
 
-def transform_sentences(movie_reviews, sentence_size, vocabulary_processor):
+def transform_sentences(movie_reviews, sentence_size, word_index):
     transformed_sentences = []
     progbar = Progbar(target=len(movie_reviews))
 
     for index, (review, label) in enumerate(movie_reviews):
-        review_id_list = sentence_to_id_list(review, vocabulary_processor)
-
-        """
-        The function sentence_to_id_list return a generator with a list
-        of the sentences parsed. Since we doing this sequentially,
-        we evaluate the generator, which returns a list of numpy arrays.
-        """
-        review_id_list = list(review_id_list)
-        review_id_list = review_id_list[0].tolist()
-
-        size = sentence_size
-
-        if len(review.split()) < sentence_size:
-            size = len(review.split())
+        review_id_list = sentence_to_id_list(review, word_index)
+        size = len(review_id_list)
 
         transformed_sentences.append((review_id_list, label, size))
         progbar.update(index + 1, [])
@@ -136,16 +123,6 @@ def load_embeddings(user_args):
 
     print('Loading word embeddings')
     return get_embedding(embedding_file, embed_size)
-
-
-def create_vocabulary_processor(vocab, user_args):
-    sentence_size = user_args['sentence_size']
-
-    print('Creating Vocabulary Parser')
-    vocabulary_processor = create_vocab_parser(vocab, sentence_size)
-    print()
-
-    return vocabulary_processor
 
 
 def create_tfrecords(reviews, output_path, dataset_type):
@@ -241,12 +218,14 @@ def main():
     sentence_size = user_args['sentence_size']
     print('Find and replacing unknown words for positive reviews...')
     progbar = Progbar(target=len(pos_reviews))
-    pos_reviews = find_and_replace_unknown_words(pos_reviews, word_index, sentence_size, progbar)
+    pos_reviews = find_and_replace_unknown_words(pos_reviews, word_index, sentence_size=None,
+                                                 progbar=progbar)
     print()
 
     print('Find and replacing unknown words for negative reviews...')
     progbar = Progbar(target=len(neg_reviews))
-    neg_reviews = find_and_replace_unknown_words(neg_reviews, word_index, sentence_size, progbar)
+    neg_reviews = find_and_replace_unknown_words(neg_reviews, word_index, sentence_size=None,
+                                                 progbar=progbar)
 
     """
     This step will join both pos_reviews and neg_reviews into a single list
@@ -265,25 +244,17 @@ def main():
         create_validation_dir(user_args)
 
     """
-    We use the GloVe embeddings to create a vocubalary processor for our
-    reviews. This vocabulary processor is responsible for turning each token
-    in a review into an id correspoding to the word row position on the
-    GloVe matrix.
-    """
-    vocabulary_processor = create_vocabulary_processor(vocab, user_args)
-
-    """
     The reviews are turned into a list of ids.
     """
 
     print('Transforming {} reviews into list of ids'.format(dataset_type))
-    all_reviews = transform_sentences(all_reviews, sentence_size, vocabulary_processor)
+    all_reviews = transform_sentences(all_reviews, sentence_size, word_index)
     print()
 
     if not is_test:
         print('Transforming validation reviews into list of ids')
         validation_reviews = transform_sentences(validation_reviews, sentence_size,
-                                                 vocabulary_processor)
+                                                 word_index)
         print()
 
     """
