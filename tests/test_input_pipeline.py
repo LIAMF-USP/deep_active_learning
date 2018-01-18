@@ -11,16 +11,19 @@ class InputPipelineTests(tf.test.TestCase):
         test_files = 'tests/test_data/test_data.tfrecord'
         batch_size = 2
         perform_shuffle = True
+        bucket_width = 10
+        num_buckets = 10
 
         input_pipeline = InputPipeline(
-            train_files, validation_files, test_files, batch_size, perform_shuffle)
+            train_files, validation_files, test_files, batch_size, perform_shuffle,
+            bucket_width, num_buckets)
 
         input_pipeline.build_pipeline()
 
         with self.test_session():
             input_pipeline.train_iterator.run()
             num_batches = 0
-            expected_num_batches = 5
+            expected_num_batches = 25
 
             while True:
                 try:
@@ -35,7 +38,7 @@ class InputPipelineTests(tf.test.TestCase):
 
             input_pipeline.validation_iterator.run()
             num_batches = 0
-            expected_num_batches = 3
+            expected_num_batches = 6
 
             while True:
                 try:
@@ -50,7 +53,7 @@ class InputPipelineTests(tf.test.TestCase):
 
             input_pipeline.test_iterator.run()
             num_batches = 0
-            expected_num_batches = 4
+            expected_num_batches = 7
 
             while True:
                 try:
@@ -65,7 +68,7 @@ class InputPipelineTests(tf.test.TestCase):
 
             input_pipeline.train_iterator.run()
             num_batches = 0
-            expected_num_batches = 5
+            expected_num_batches = 25
 
             while True:
                 try:
