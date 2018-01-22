@@ -2,7 +2,7 @@ import re
 
 import tensorflow as tf
 
-from word_embedding.word_embedding import UNK_TOKEN
+from tensorflow.contrib import learn
 
 
 class SentenceTFRecord():
@@ -42,32 +42,6 @@ def sentence_to_id_list(sentence, word_index):
     return [word_index[word] for word in sentence.split()]
 
 
-def find_and_replace_unknown_words(reviews, word_index, sentence_size, progbar=None):
-    processed_reviews = []
-    dynamic_sentence_size = False
-
-    if not sentence_size:
-        dynamic_sentence_size = True
-
-    for review_index, review in enumerate(reviews):
-        words = review.split()
-
-        if dynamic_sentence_size:
-            sentence_size = len(words)
-
-        for index, word in enumerate(words[:sentence_size]):
-            if word not in word_index:
-                words[index] = UNK_TOKEN
-
-        review = ' '.join(words)
-        processed_reviews.append(review)
-
-        if progbar:
-            progbar.update(review_index + 1, [])
-
-    return processed_reviews
-
-
 def add_space_between_characters(text):
     text = re.sub(r"\'s", " \'s", text)
     text = re.sub(r"\'m", " \'m", text)
@@ -104,3 +78,26 @@ def remove_special_characters_from_text(text):
 
 def to_lower(review_text):
     return review_text.lower()
+
+
+def get_maximum_size_review(reviews_array):
+    max_size = -1
+
+    for review in reviews_array:
+        review = review.split()
+        if len(review) > max_size:
+            max_size = len(review)
+
+    return max_size
+
+
+def get_vocab(reviews_array):
+    max_size = get_maximum_size_review(reviews_array)
+
+    vocabulary_processor = learn.preprocessing.VocabularyProcessor(max_size)
+    vocabulary_processor.fit(reviews_array)
+
+    vocab = vocabulary_processor.vocabulary_._mapping
+    sorted_vocab = sorted(vocab.items(), key=lambda x: x[1])
+
+    return sorted_vocab

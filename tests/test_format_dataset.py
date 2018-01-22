@@ -10,8 +10,7 @@ from preprocessing.format_dataset import (remove_html_from_text,
                                           create_unique_apostrophe,
                                           add_space_between_characters,
                                           sentence_to_id_list,
-                                          to_lower,
-                                          find_and_replace_unknown_words)
+                                          to_lower)
 from word_embedding.word_embedding import get_embedding
 
 
@@ -172,39 +171,23 @@ class FormatDatasetTest(unittest.TestCase):
 
         self.assertEqual(expected_string, actual_string)
 
-    def test_find_and_replace_unknown_words(self):
-        word_index = {'a': 1, 'b': 2, 'c': 3, '<unk>': 4}
-        reviews = ['a b c d', 'e f g a', '3 5 c f']
-        sentence_size = 3
-
-        expected_reviews = ['a b c d', '<unk> <unk> <unk> a', '<unk> <unk> c f']
-        actual_reviews = find_and_replace_unknown_words(reviews, word_index, sentence_size)
-
-        self.assertEquals(expected_reviews, actual_reviews)
-
-        reviews = ['a b c d', 'e f g a', '3 5 c f']
-        sentence_size = None
-
-        expected_reviews = ['a b c <unk>', '<unk> <unk> <unk> a', '<unk> <unk> c <unk>']
-        actual_reviews = find_and_replace_unknown_words(reviews, word_index, sentence_size)
-
-        self.assertEquals(expected_reviews, actual_reviews)
-
     @patch('numpy.random.uniform')
     def test_load_glove(self, mock_numpy):
         mock_numpy.return_value = np.array([7, 8, 9])
         glove_path = 'tests/test_data/glove_test_data.txt'
         embed_size = 3
 
-        expected_word_index = {'a': 1, 'b': 2, 'c': 3, '<unk>': 4}
-        expected_glove_matrix = [[0, 0, 0],
+        expected_word_index = {'<unk>': 0, 'a': 1, 'b': 2, 'c': 3}
+        expected_glove_matrix = [[7, 8, 9],
                                  [0.1, 0.2, 0.3],
                                  [1, 2, 3],
-                                 [4, 5, 6],
-                                 [7, 8, 9]]
-        expected_vocab = ['a', 'b', 'c', '<unk>']
+                                 [4, 5, 6]]
+        expected_vocab = ['<unk>', 'a', 'b', 'c']
+        vocab = [('<unk>', 0), ('a', 1), ('b', 2), ('c', 3)]
 
-        actual_word_index, actual_glove_matrix, actual_vocab = get_embedding(glove_path, embed_size)
+        embedding = get_embedding(glove_path, embed_size, vocab)
+        actual_word_index, actual_glove_matrix, actual_vocab = embedding.get_word_embedding(
+            should_save=False, verbose=False)
 
         self.assertEqual(expected_word_index, actual_word_index)
 
@@ -213,7 +196,8 @@ class FormatDatasetTest(unittest.TestCase):
 
     def test_sentence_to_id_list(self):
         embed_size = 50
-        word_index, glove_matrix, vocab = get_embedding('data/glove.6B.50d.txt', embed_size)
+        embedding = get_embedding('data/glove.6B.50d.txt', embed_size, [])
+        word_index, glove_matrix, vocab = embedding.load_embedding()
 
         sentence = 'i love you'
         parsed_sentence = sentence.split()

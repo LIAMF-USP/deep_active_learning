@@ -9,7 +9,7 @@ from preprocessing.format_dataset import (remove_html_from_text,
                                           add_space_between_characters,
                                           sentence_to_id_list,
                                           SentenceTFRecord,
-                                          find_and_replace_unknown_words,
+                                          get_vocab,
                                           to_lower)
 from word_embedding.word_embedding import get_embedding
 from utils.progress_bar import Progbar
@@ -117,12 +117,14 @@ def transform_sentences(movie_reviews, sentence_size, word_index):
     return transformed_sentences
 
 
-def load_embeddings(user_args):
+def load_embeddings(user_args, vocab, is_test):
     embedding_file = user_args['embedding_file']
     embed_size = user_args['embed_size']
+    embedding_path = user_args['embedding_path']
+    embedding_wordindex_path = user_args['embedding_wordindex_path']
 
-    print('Loading word embeddings')
-    return get_embedding(embedding_file, embed_size)
+    return get_embedding(embedding_file, embed_size, vocab, embedding_path,
+                         embedding_wordindex_path)
 
 
 def create_tfrecords(reviews, output_path, dataset_type):
@@ -171,6 +173,16 @@ def create_argument_parser():
                         type=str,
                         help='The location of the embedding file')
 
+    parser.add_argument('-ep',
+                        '--embedding-path',
+                        type=str,
+                        help='Location of the embedding file (Testing Dataset Only)')
+
+    parser.add_argument('-ewi',
+                        '--embedding-wordindex-path',
+                        type=str,
+                        help='Location of the embedding word index file (Testing Dataset Only)')
+
     parser.add_argument('-es',
                         '--embed-size',
                         type=int,
@@ -206,26 +218,28 @@ def main():
     """
     pos_reviews, neg_reviews = apply_data_preprocessing(user_args)
 
-    """
-    Load GloVe embeddings.
-    """
-    word_index, glove_matrix, vocab = load_embeddings(user_args)
+    print('Loading vocabulary...')
+    reviews = pos_reviews + neg_reviews
+    vocab = get_vocab(reviews)
 
     """
-    Replace words that cannot be found on GloVe with the an special
-    unknown token.
+    Load Embeddings.
+    """
+    embedding = load_embeddings(user_args, vocab, is_test)
+    word_index, glove_matrix, vocab = embedding.get_word_embedding()
+
+    """
+    Handle unknown words in the embedding
     """
     sentence_size = user_args['sentence_size']
     print('Find and replacing unknown words for positive reviews...')
     progbar = Progbar(target=len(pos_reviews))
-    pos_reviews = find_and_replace_unknown_words(pos_reviews, word_index, sentence_size=None,
-                                                 progbar=progbar)
+    pos_reviews = embedding.handle_unknown_words(pos_reviews, sentence_size=None, progbar=progbar)
     print()
 
     print('Find and replacing unknown words for negative reviews...')
     progbar = Progbar(target=len(neg_reviews))
-    neg_reviews = find_and_replace_unknown_words(neg_reviews, word_index, sentence_size=None,
-                                                 progbar=progbar)
+    neg_reviews = embedding.handle_unknown_words(neg_reviews, sentence_size=None, progbar=progbar)
 
     """
     This step will join both pos_reviews and neg_reviews into a single list
