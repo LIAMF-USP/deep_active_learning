@@ -201,8 +201,9 @@ def main():
     embedding_file = user_args['embedding_file']
     embed_size = user_args['embed_size']
     embedding_pickle = user_args['embedding_pickle']
-    embedding_matrix = get_embedding(
-        embedding_file, embed_size, embedding_pickle, only_embedding=True)
+    word_embedding = get_embedding(
+        embedding_file, embed_size, None, embedding_pickle)
+    _, embedding_matrix, _ = word_embedding.get_word_embedding()
 
     print('Creating LSTM model...')
     lstm_config = LSTMConfig(user_args)
