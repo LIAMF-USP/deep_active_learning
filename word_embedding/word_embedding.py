@@ -38,13 +38,15 @@ class WordEmbedding:
     def get_word_embedding(self, progbar=None, should_save=True, verbose=True):
         if self.embedding_save_path and os.path.exists(self.embedding_save_path):
             if verbose:
-                print('Loading saved embeddings...')
+                print('Loading saved matrix embeddings...')
 
             with open(self.embedding_save_path, 'rb') as embedding_pkl:
                 self.embedding_matrix = pickle.load(embedding_pkl)
 
-            with open(self.word_index_save_path, 'rb') as word_index_pkl:
-                self.word_index = pickle.load(word_index_pkl)
+            self.word_index = None
+            if self.word_index_save_path and os.path.exists(self.word_index_save_path):
+                with open(self.word_index_save_path, 'rb') as word_index_pkl:
+                    self.word_index = pickle.load(word_index_pkl)
 
             self.vocab = None
         else:
@@ -93,19 +95,22 @@ class WordEmbedding:
 
 class GloVeEmbedding(WordEmbedding):
 
+    def add_zero_rows(self, embedding_matrix):
+        # Add an zero row on our glove matrix for padding purposes
+        embedding_matrix.append([float(0) for _ in range(self.embed_size)])
+
     def add_unknown_embedding(self):
         self.vocab.append(UNK_TOKEN)
         unknown_embedding = np.random.uniform(low=-1, high=1, size=self.embed_size)
         self.embedding_matrix.append(unknown_embedding.tolist())
-        self.word_index[UNK_TOKEN] = len(self.word_index)
+        self.word_index[UNK_TOKEN] = len(self.word_index) + 1
 
     def load_embedding(self, progbar=None):
         word_index = dict()
         embedding_matrix = []
         vocab = []
 
-        # Add an zero row on our glove matrix for padding purposes
-        embedding_matrix.append([float(0) for _ in range(self.embed_size)])
+        self.add_zero_rows(embedding_matrix)
 
         with open(self.embedding_path, 'r') as glove_file:
             for index, glove_line in enumerate(glove_file.readlines()):
@@ -126,14 +131,15 @@ class GloVeEmbedding(WordEmbedding):
         self.embedding_matrix = []
         self.vocab = []
 
+        self.add_zero_rows(self.embedding_matrix)
         self.add_unknown_embedding()
 
         for word, index in self.word_vocab[1:]:
 
             if word in glove_index:
-                self.word_index[word] = len(self.word_index)
                 self.embedding_matrix.append(
                     glove_matrix[glove_index[word]])
+                self.word_index[word] = len(self.word_index) + 1
                 self.vocab.append(word)
 
         return self.word_index, self.embedding_matrix, self.vocab

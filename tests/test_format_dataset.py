@@ -177,8 +177,9 @@ class FormatDatasetTest(unittest.TestCase):
         glove_path = 'tests/test_data/glove_test_data.txt'
         embed_size = 3
 
-        expected_word_index = {'<unk>': 0, 'a': 1, 'b': 2, 'c': 3}
-        expected_glove_matrix = [[7, 8, 9],
+        expected_word_index = {'<unk>': 1, 'a': 2, 'b': 3, 'c': 4}
+        expected_glove_matrix = [[0, 0, 0],
+                                 [7, 8, 9],
                                  [0.1, 0.2, 0.3],
                                  [1, 2, 3],
                                  [4, 5, 6]]
