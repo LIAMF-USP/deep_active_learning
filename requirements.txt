@@ -1,5 +1,5 @@
 matplotlib
-tensorflow
+tensorflow-gpu
 nose2
 scipy
 flake8
