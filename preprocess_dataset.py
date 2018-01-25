@@ -117,7 +117,7 @@ def transform_sentences(movie_reviews, sentence_size, word_index):
     return transformed_sentences
 
 
-def load_embeddings(user_args, vocab, is_test):
+def load_embeddings(user_args, vocab):
     embedding_file = user_args['embedding_file']
     embed_size = user_args['embed_size']
     embedding_path = user_args['embedding_path']
@@ -218,29 +218,6 @@ def main():
     """
     pos_reviews, neg_reviews = apply_data_preprocessing(user_args)
 
-    print('Loading vocabulary...')
-    reviews = pos_reviews + neg_reviews
-    vocab = get_vocab(reviews)
-
-    """
-    Load Embeddings.
-    """
-    embedding = load_embeddings(user_args, vocab, is_test)
-    word_index, glove_matrix, vocab = embedding.get_word_embedding()
-
-    """
-    Handle unknown words in the embedding
-    """
-    sentence_size = user_args['sentence_size']
-    print('Find and replacing unknown words for positive reviews...')
-    progbar = Progbar(target=len(pos_reviews))
-    pos_reviews = embedding.handle_unknown_words(pos_reviews, sentence_size=None, progbar=progbar)
-    print()
-
-    print('Find and replacing unknown words for negative reviews...')
-    progbar = Progbar(target=len(neg_reviews))
-    neg_reviews = embedding.handle_unknown_words(neg_reviews, sentence_size=None, progbar=progbar)
-
     """
     This step will join both pos_reviews and neg_reviews into a single list
     and add a label to each review sentence. Finally, these reviews will be
@@ -248,6 +225,7 @@ def main():
     """
     all_reviews = create_unified_dataset(pos_reviews, neg_reviews)
 
+    vocab = None
     if not is_test:
         """
         If we are preprocessing the training data, we should also
@@ -256,6 +234,31 @@ def main():
         all_reviews, validation_reviews = create_validation_set(all_reviews)
         print('Creating validation set')
         create_validation_dir(user_args)
+
+        print('Loading vocabulary...')
+        vocab = get_vocab(all_reviews)
+
+    """
+    Load Embeddings.
+    """
+    embedding = load_embeddings(user_args, vocab)
+    word_index, matrix, embedding_vocab = embedding.get_word_embedding()
+
+    """
+    Handle unknown words in the embedding
+    """
+    sentence_size = user_args['sentence_size']
+    print('Find and replacing unknown words for reviews...')
+    progbar = Progbar(target=len(all_reviews))
+    all_reviews = embedding.handle_unknown_words(all_reviews, sentence_size=None, progbar=progbar)
+    print()
+
+    if not is_test:
+        print('Find and replacing unknown words for validation reviews...')
+        progbar = Progbar(target=len(validation_reviews))
+        validation_reviews = embedding.handle_unknown_words(validation_reviews, sentence_size=None,
+                                                            progbar=progbar)
+        print()
 
     """
     The reviews are turned into a list of ids.

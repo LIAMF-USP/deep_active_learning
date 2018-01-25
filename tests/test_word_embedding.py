@@ -15,19 +15,21 @@ class GloveEmbeddingTest(unittest.TestCase):
     def test_handle_unknown_words(self):
         word_index = {'a': 1, 'b': 2, 'c': 3, '<unk>': 4}
         self.word_embedding.word_index = word_index
-        reviews = ['a b c d', 'e f g a', '3 5 c f']
+        reviews = [('a b c d', 1), ('e f g a', 0), ('3 5 c f', 1)]
         sentence_size = 3
 
-        expected_reviews = ['a b c d', '<unk> <unk> <unk> a', '<unk> <unk> c f']
+        expected_reviews = [('a b c d', 1), ('<unk> <unk> <unk> a', 0),
+                            ('<unk> <unk> c f', 1)]
         actual_reviews = self.word_embedding.handle_unknown_words(
             reviews, sentence_size)
 
         self.assertEquals(expected_reviews, actual_reviews)
 
-        reviews = ['a b c d', 'e f g a', '3 5 c f']
+        reviews = [('a b c d', 1), ('e f g a', 0), ('3 5 c f', 1)]
         sentence_size = None
 
-        expected_reviews = ['a b c <unk>', '<unk> <unk> <unk> a', '<unk> <unk> c <unk>']
+        expected_reviews = [('a b c <unk>', 1), ('<unk> <unk> <unk> a', 0),
+                            ('<unk> <unk> c <unk>', 1)]
         actual_reviews = self.word_embedding.handle_unknown_words(
             reviews, sentence_size)
 

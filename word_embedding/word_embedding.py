@@ -35,6 +35,10 @@ class WordEmbedding:
         self.embedding_save_path = embedding_save_path
         self.word_index_save_path = word_index_save_path
 
+        self.word_index = dict()
+        self.embedding_matrix = []
+        self.vocab = []
+
     def get_word_embedding(self, progbar=None, should_save=True, verbose=True):
         if self.embedding_save_path and os.path.exists(self.embedding_save_path):
             if verbose:
@@ -64,39 +68,8 @@ class WordEmbedding:
 
         return self.word_index, self.embedding_matrix, self.vocab
 
-    def handle_unknown_words(self, reviews, sentence_size, progbar=None):
-        processed_reviews = []
-        dynamic_sentence_size = False
-
-        if not sentence_size:
-            dynamic_sentence_size = True
-
-        for review_index, review in enumerate(reviews):
-            words = review.split()
-
-            if dynamic_sentence_size:
-                sentence_size = len(words)
-
-            for index, word in enumerate(words[:sentence_size]):
-                if word not in self.word_index:
-                    self.update_unknown_word(word, index, words)
-
-            review = ' '.join(words)
-            processed_reviews.append(review)
-
-            if progbar:
-                progbar.update(review_index + 1, [])
-
-        return processed_reviews
-
-    def update_unknown_word(self, unknown_word, word_index, word_list):
-        raise NotImplementedError
-
-
-class GloVeEmbedding(WordEmbedding):
-
     def add_zero_rows(self, embedding_matrix):
-        # Add an zero row on our glove matrix for padding purposes
+        # Add an zero row on to the matrix for padding purposes
         embedding_matrix.append([float(0) for _ in range(self.embed_size)])
 
     def add_unknown_embedding(self):
@@ -104,6 +77,34 @@ class GloVeEmbedding(WordEmbedding):
         unknown_embedding = np.random.uniform(low=-1, high=1, size=self.embed_size)
         self.embedding_matrix.append(unknown_embedding.tolist())
         self.word_index[UNK_TOKEN] = len(self.word_index) + 1
+
+    def handle_unknown_words(self, reviews, sentence_size, progbar=None):
+        processed_reviews = []
+        dynamic_sentence_size = False
+
+        if not sentence_size:
+            dynamic_sentence_size = True
+
+        for review_index, (review, label) in enumerate(reviews):
+            words = review.split()
+
+            if dynamic_sentence_size:
+                sentence_size = len(words)
+
+            for index, word in enumerate(words[:sentence_size]):
+                if word not in self.word_index:
+                    words[index] = UNK_TOKEN
+
+            review = ' '.join(words)
+            processed_reviews.append((review, label))
+
+            if progbar:
+                progbar.update(review_index + 1, [])
+
+        return processed_reviews
+
+
+class GloVeEmbedding(WordEmbedding):
 
     def load_embedding(self, progbar=None):
         word_index = dict()
@@ -126,10 +127,6 @@ class GloVeEmbedding(WordEmbedding):
 
     def prepare_embedding(self, progbar=None):
         glove_index, glove_matrix, glove_vocab = self.load_embedding()
-
-        self.word_index = dict()
-        self.embedding_matrix = []
-        self.vocab = []
 
         self.add_zero_rows(self.embedding_matrix)
         self.add_unknown_embedding()

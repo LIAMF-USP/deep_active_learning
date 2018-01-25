@@ -83,7 +83,7 @@ def to_lower(review_text):
 def get_maximum_size_review(reviews_array):
     max_size = -1
 
-    for review in reviews_array:
+    for review, _ in reviews_array:
         review = review.split()
         if len(review) > max_size:
             max_size = len(review)
@@ -95,6 +95,7 @@ def get_vocab(reviews_array):
     max_size = get_maximum_size_review(reviews_array)
 
     vocabulary_processor = learn.preprocessing.VocabularyProcessor(max_size)
+    reviews_array = [review for review, _ in reviews_array]
     vocabulary_processor.fit(reviews_array)
 
     vocab = vocabulary_processor.vocabulary_._mapping
