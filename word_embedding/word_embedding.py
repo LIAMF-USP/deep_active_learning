@@ -1,3 +1,4 @@
+import fastText
 import os
 import pickle
 
@@ -141,5 +142,26 @@ class GloVeEmbedding(WordEmbedding):
 
         return self.word_index, self.embedding_matrix, self.vocab
 
+
+class FastTextEmbedding(WordEmbedding):
+
+    def load_embedding(self, progbar=None):
+        self.fasttext_model = fastText.load_model(self.embedding_path)
+
+    def prepare_embedding(self):
+        self.load_embedding()
+
+        self.add_zero_rows(self.embedding_matrix)
+        self.add_unknown_embedding()
+
+        for word, index in self.word_vocab[1:]:
+            self.embedding_matrix.append(
+                self.fasttext_model.get_word_vector(word).tolist())
+            self.word_index[word] = len(self.word_index) + 1
+            self.vocab.append(word)
+
+        return self.word_index, self.embedding_matrix, self.vocab
+
     def update_unknown_word(self, unknown_word, word_index, word_list):
-        word_list[word_index] = UNK_TOKEN
+        self.embedding_matrix.append(self.fasttext[unknown_word])
+        self.word_index[unknown_word] = len(self.word_index) + 1

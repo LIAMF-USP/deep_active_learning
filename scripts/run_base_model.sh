@@ -5,9 +5,13 @@ set -e
 #usage
 #./script/run_base_model.sh
 
-TRAIN_FILE="data/aclImdb_formatted/train/train.tfrecord"
-VALIDATION_FILE="data/aclImdb_formatted/val/val.tfrecord"
-TEST_FILE="data/aclImdb_formatted/test/test.tfrecord"
+GLOVE_TRAIN_FILE="data/glove/aclImdb_formatted/train/train.tfrecord"
+GLOVE_VALIDATION_FILE="data/glove/aclImdb_formatted/val/val.tfrecord"
+GLOVE_TEST_FILE="data/glove/aclImdb_formatted/test/test.tfrecord"
+
+FASTTEXT_TRAIN_FILE="data/fasttext/aclImdb_formatted/train/train.tfrecord"
+FASTTEXT_VALIDATION_FILE="data/fasttext/aclImdb_formatted/val/val.tfrecord"
+FASTTEXT_TEST_FILE="data/fasttext/aclImdb_formatted/test/test.tfrecord"
 
 NUM_TRAIN=22500
 NUM_VALIDATION=2500
@@ -16,13 +20,17 @@ NUM_TEST=25000
 MODEL_NAME='base_model'
 TENSORBOARD_DIR='tensorboard_logs'
 
-EMBEDDING_FILE="data/glove.6B.100d.txt"
-EMBEDDING_PICKLE="data/glove.pkl"
+GLOVE_EMBEDDING_FILE="data/glove/glove.6B.100d.txt"
+GLOVE_EMBEDDING_PICKLE="data/glove/glove.pkl"
+GLOVE_EMBED_SIZE=100
+
+FASTTEXT_EMBEDDING_FILE="data/fasttext/wiki.en.vec"
+FASTTEXT_EMBEDDING_PICKLE="data/fasttext/fasttext.pkl"
+FASTTEXT_EMBED_SIZE=300
 
 GRAPHS_DIR='graphs'
 
 NUM_EPOCHS=18
-EMBED_SIZE=100
 NUM_CLASSES=2
 
 PERFORM_SHUFFLE=1
@@ -39,6 +47,14 @@ LSTM_OUTPUT_DROPOUT=0.5
 LSTM_STATE_DROPOUT=0.5
 EMBEDDINF_DROPOUT=0.5
 WEIGHT_DECAY=0.000001
+
+TRAIN_FILE="$FASTTEXT_TRAIN_FILE"
+VALIDATION_FILE="$FASTTEXT_VALIDATION_FILE"
+TEST_FILE="$FASTTEXT_TEST_FILE"
+
+EMBEDDING_FILE="$FASTTEXT_EMBEDDING_FILE"
+EMBEDDING_PICKLE="$FASTTEXT_EMBEDDING_PICKLE"
+EMBED_SIZE="$FASTTEXT_EMBED_SIZE"
 
 python base_model.py \
     --train-file=${TRAIN_FILE} \

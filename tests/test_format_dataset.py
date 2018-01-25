@@ -197,7 +197,7 @@ class FormatDatasetTest(unittest.TestCase):
 
     def test_sentence_to_id_list(self):
         embed_size = 50
-        embedding = get_embedding('data/glove.6B.50d.txt', embed_size, [])
+        embedding = get_embedding('data/glove/glove.6B.50d.txt', embed_size, [])
         word_index, glove_matrix, vocab = embedding.load_embedding()
 
         sentence = 'i love you'

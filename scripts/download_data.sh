@@ -13,12 +13,18 @@ DATASET_TARBALL="aclImdb_v1.tar.gz"
 GLOVE_URL="http://nlp.stanford.edu/data/glove.6B.zip"
 GLOVE_ZIP="glove.6B.zip"
 GLOVE_FILE="glove.6B.50d.txt"
+GLOVE_DIR="glove"
 
 WORD2VEC_URL="https://docs.google.com/uc?export=download&id=0B7XkCwpI5KDYNlNUTTlSS21pQmM"
 WORD2VEC_ZIP="GoogleNews-vectors-negative300.bin.gz"
 COOKIES_FILE="cookies.txt"
 WORD2VEC_FILE="GoogleNews-vectors-negative300.bin"
+WORD2VEC_DIR="word2vec"
 
+FASTTEXT_URL="https://s3-us-west-1.amazonaws.com/fasttext-vectors/wiki.en.zip"
+FASTEXT_ZIP="wiki.en.zip"
+FASTTEXT_FILE="wiki.en.bin"
+FASTTEXT_DIR="fasttext"
 
 if [ ! -d "$DATA_DIR" ]; then
     mkdir "$DATA_DIR"
@@ -34,6 +40,12 @@ else
     echo "Dataset already downloaded!"
 fi
 
+if [ ! -d "$GLOVE_DIR" ]; then
+    mkdir "$GLOVE_DIR"
+fi
+
+cd "$GLOVE_DIR"
+
 if [ ! -e "$GLOVE_FILE" ]; then
     wget "$GLOVE_URL"
     unzip "$GLOVE_ZIP" 
@@ -41,6 +53,14 @@ if [ ! -e "$GLOVE_FILE" ]; then
 else
     echo "GloVe file already downloaded!"
 fi
+
+cd ..
+
+if [ ! -d "$WORD2VEC_DIR" ]; then
+    mkdir "$WORD2VEC_DIR"
+fi
+
+cd "$WORD2VEC_DIR"
 
 # Based on the following script:
 # https://gist.github.com/yanaiela/cfef50380de8a5bfc8c272bb0c91d6e1
@@ -54,5 +74,23 @@ if [ ! -e "$WORD2VEC_FILE" ]; then
 else
     echo "Word2vec file already downloaded!"
 fi
+
+cd ..
+
+if [ ! -d "$FASTTEXT_DIR" ]; then
+    mkdir "$FASTTEXT_DIR"
+fi
+
+cd "$FASTTEXT_DIR"
+
+if [ ! -e "$FASTTEXT_FILE" ]; then
+    wget "$FASTTEXT_URL"
+    unzip "$FASTEXT_ZIP"
+    rm "$FASTEXT_ZIP"
+else
+    echo "FastText file already downloaded!"
+fi
+
+cd ..
 
 cd ..
