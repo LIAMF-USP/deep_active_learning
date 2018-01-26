@@ -4,7 +4,7 @@ import os
 import tensorflow as tf
 
 from model.input_pipeline import InputPipeline
-from model.lstm_model import LSTMModel, LSTMConfig
+from model.recurrent_model import RecurrentModel, RecurrentConfig
 from word_embedding.word_embedding import get_embedding
 from utils.tensorboard import create_unique_name
 from utils.graphs import accuracy_graph
@@ -143,7 +143,7 @@ def create_argument_parser():
     parser.add_argument('-nu',
                         '--num-units',
                         type=int,
-                        help='The number of hidden units in the LSTM layer')
+                        help='The number of hidden units in the Recurrent layer')
 
     parser.add_argument('-nc',
                         '--num-classes',
@@ -151,14 +151,14 @@ def create_argument_parser():
                         help='The number of classification classes')
 
     parser.add_argument('-lod',
-                        '--lstm-output-dropout',
+                        '--recurrent-output-dropout',
                         type=float,
-                        help='Dropout value for LSTM output')
+                        help='Dropout value for Recurrent output')
 
     parser.add_argument('-lsd',
-                        '--lstm-state-dropout',
+                        '--recurrent-state-dropout',
                         type=float,
-                        help='Dropout value for lstm state (variational dropout)')
+                        help='Dropout value for recurrent state (variational dropout)')
 
     parser.add_argument('-ed',
                         '--embedding-dropout',
@@ -205,20 +205,20 @@ def main():
         embedding_file, embed_size, None, embedding_pickle)
     _, embedding_matrix, _ = word_embedding.get_word_embedding()
 
-    print('Creating LSTM model...')
-    lstm_config = LSTMConfig(user_args)
-    lstm_model = LSTMModel(lstm_config, embedding_matrix)
+    print('Creating Recurrent model...')
+    recurrent_config = RecurrentConfig(user_args)
+    recurrent_model = RecurrentModel(recurrent_config, embedding_matrix)
 
     with tf.Session() as sess:
         writer, save_name = initialize_tensorboard(user_args)
         writer.add_graph(sess.graph)
 
-        lstm_model.prepare(sess, input_pipeline)
+        recurrent_model.prepare(sess, input_pipeline)
 
         init = tf.global_variables_initializer()
         sess.run(init)
 
-        train_accuracies, val_accuracies = lstm_model.fit(sess, input_pipeline, writer)
+        train_accuracies, val_accuracies = recurrent_model.fit(sess, input_pipeline, writer)
 
     graphs_dir = user_args['graphs_dir']
     save_accuracy_graph(train_accuracies, val_accuracies, graphs_dir, save_name)

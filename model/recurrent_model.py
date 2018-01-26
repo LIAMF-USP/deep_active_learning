@@ -3,20 +3,20 @@ import tensorflow as tf
 from model.sentiment_analysis_model import SentimentAnalysisModel, Config
 
 
-class LSTMConfig(Config):
+class RecurrentConfig(Config):
 
     def __init__(self, user_args):
         super().__init__(user_args)
 
         self.num_units = user_args['num_units']
         self.batch_size = user_args['batch_size']
-        self.lstm_output_dropout = user_args['lstm_output_dropout']
-        self.lstm_state_dropout = user_args['lstm_state_dropout']
+        self.recurrent_output_dropout = user_args['recurrent_output_dropout']
+        self.recurrent_state_dropout = user_args['recurrent_state_dropout']
         self.embedding_dropout = user_args['embedding_dropout']
         self.weight_decay = user_args['weight_decay']
 
 
-class LSTMModel(SentimentAnalysisModel):
+class RecurrentModel(SentimentAnalysisModel):
 
     def __init__(self, config, pretrained_embeddings):
         super().__init__(config)
@@ -24,23 +24,23 @@ class LSTMModel(SentimentAnalysisModel):
         self.pretrained_embeddings = pretrained_embeddings
 
     def add_placeholder(self):
-        self.lstm_output_dropout_placeholder = tf.placeholder(tf.float32)
-        self.lstm_state_dropout_placeholder = tf.placeholder(tf.float32)
+        self.recurrent_output_dropout_placeholder = tf.placeholder(tf.float32)
+        self.recurrent_state_dropout_placeholder = tf.placeholder(tf.float32)
         self.embedding_dropout_placeholder = tf.placeholder(tf.float32)
 
-    def create_feed_dict(self, lstm_output_dropout=None, lstm_state_dropout=None,
+    def create_feed_dict(self, recurrent_output_dropout=None, recurrent_state_dropout=None,
                          embedding_dropout=None):
-        if lstm_output_dropout is None:
-            lstm_output_dropout = self.config.lstm_output_dropout
+        if recurrent_output_dropout is None:
+            recurrent_output_dropout = self.config.recurrent_output_dropout
 
-        if lstm_state_dropout is None:
-            lstm_state_dropout = self.config.lstm_state_dropout
+        if recurrent_state_dropout is None:
+            recurrent_state_dropout = self.config.recurrent_state_dropout
 
         if embedding_dropout is None:
             embedding_dropout = self.config.embedding_dropout
 
-        feed_dict = {self.lstm_output_dropout_placeholder: lstm_output_dropout,
-                     self.lstm_state_dropout_placeholder: lstm_state_dropout,
+        feed_dict = {self.recurrent_output_dropout_placeholder: recurrent_output_dropout,
+                     self.recurrent_state_dropout_placeholder: recurrent_state_dropout,
                      self.embedding_dropout_placeholder: embedding_dropout}
 
         return feed_dict
@@ -63,12 +63,12 @@ class LSTMModel(SentimentAnalysisModel):
 
         x_hat = self.add_embedding(inputs)
 
-        with tf.name_scope('lstm_layer'):
+        with tf.name_scope('recurrent_layer'):
             lstm_cell = tf.nn.rnn_cell.LSTMCell(num_units)
-            drop_lstm_cell = tf.nn.rnn_cell.DropoutWrapper(
+            drop_recurrent_cell = tf.nn.rnn_cell.DropoutWrapper(
                     lstm_cell,
-                    output_keep_prob=self.lstm_output_dropout_placeholder,
-                    state_keep_prob=self.lstm_state_dropout_placeholder,
+                    output_keep_prob=self.recurrent_output_dropout_placeholder,
+                    state_keep_prob=self.recurrent_state_dropout_placeholder,
                     variational_recurrent=True,
                     dtype=tf.float32)
 
@@ -77,18 +77,18 @@ class LSTMModel(SentimentAnalysisModel):
             the end of a sentence. When doing sequence classification,
             we need the last relevant value from the outputs matrix.
 
-            Since we are using a single LSTM cell, this can be achieved by getting
+            Since we are using a single recurrent cell, this can be achieved by getting
             the output from the cell.h returned from the dynamic_rnn method.
             """
-            _, cell = tf.nn.dynamic_rnn(drop_lstm_cell, x_hat,
+            _, cell = tf.nn.dynamic_rnn(drop_recurrent_cell, x_hat,
                                         sequence_length=size,
                                         dtype=tf.float32)
 
             """
             This variable will have shape [batch_size, num_units]
             """
-            lstm_output = cell.h
-            tf.summary.histogram('lstm_output', lstm_output)
+            recurrent_output = cell.h
+            tf.summary.histogram('recurrent_output', recurrent_output)
 
         with tf.name_scope('output_layer'):
             initializer = tf.contrib.layers.xavier_initializer()
@@ -99,7 +99,7 @@ class LSTMModel(SentimentAnalysisModel):
                 initializer(shape=[num_classes]),
                 name='bias')
 
-            prediction = tf.matmul(lstm_output, weight) + bias
+            prediction = tf.matmul(recurrent_output, weight) + bias
 
             tf.summary.histogram('output_weight', weight)
             tf.summary.histogram('output_bias', bias)
@@ -140,7 +140,7 @@ class LSTMModel(SentimentAnalysisModel):
             self._size = size
 
     def batch_evaluate(self, sess):
-        feed = self.create_feed_dict(lstm_output_dropout=1.0, lstm_state_dropout=1.0,
+        feed = self.create_feed_dict(recurrent_output_dropout=1.0, recurrent_state_dropout=1.0,
                                      embedding_dropout=1.0)
         accuracy, total = sess.run([self._accuracy, self._size], feed_dict=feed)
 

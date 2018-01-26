@@ -3,10 +3,10 @@ import numpy as np
 
 from collections import namedtuple
 
-from model.lstm_model import LSTMModel
+from model.recurrent_model import RecurrentModel
 
 
-class LSTMModelTest(tf.test.TestCase):
+class RecurrentModelTest(tf.test.TestCase):
 
     def test_add_embedding(self):
         embeddings = [[0, 0, 0],
@@ -18,8 +18,8 @@ class LSTMModelTest(tf.test.TestCase):
         Config = namedtuple('Config', ['num_units', 'num_classes'])
         config = Config(3, 2)
 
-        lstm_model = LSTMModel(config, embeddings)
-        lstm_model.add_placeholder()
+        recurrent_model = RecurrentModel(config, embeddings)
+        recurrent_model.add_placeholder()
 
         x_hat = np.array([[1, 2, 3], [3, 2, 0], [4, 0, 0]])
 
@@ -28,13 +28,13 @@ class LSTMModelTest(tf.test.TestCase):
                                        [[10, 11, 12], [0, 0, 0], [0, 0, 0]]],
                                       dtype=np.float32)
 
-        embedding_data = lstm_model.add_embedding(x_hat)
+        embedding_data = recurrent_model.add_embedding(x_hat)
 
         with self.test_session() as sess:
             init = tf.global_variables_initializer()
             init.run()
 
-            feed = lstm_model.create_feed_dict(1.0, 1.0, 1.0)
+            feed = recurrent_model.create_feed_dict(1.0, 1.0, 1.0)
 
             expected_shape = expected_embedding.shape
             actual_shape = tf.shape(embedding_data)
@@ -63,10 +63,10 @@ class LSTMModelTest(tf.test.TestCase):
         Config = namedtuple('Config', ['num_units', 'num_classes'])
         config = Config(3, 2)
 
-        lstm_model = LSTMModel(config, embeddings)
-        lstm_model.add_placeholder()
-        lstm_model.pred = batch_prediction
-        lstm_model.add_evaluation_op(batch_labels)
+        recurrent_model = RecurrentModel(config, embeddings)
+        recurrent_model.add_placeholder()
+        recurrent_model.pred = batch_prediction
+        recurrent_model.add_evaluation_op(batch_labels)
 
         expected_accuracy = 4.0
         expected_size = 5
@@ -75,7 +75,7 @@ class LSTMModelTest(tf.test.TestCase):
             init = tf.global_variables_initializer()
             init.run()
 
-            actual_accuracy, actual_size = lstm_model.batch_evaluate(sess)
+            actual_accuracy, actual_size = recurrent_model.batch_evaluate(sess)
 
             self.assertEqual(expected_size, actual_size)
             self.assertAlmostEqual(expected_accuracy, actual_accuracy)

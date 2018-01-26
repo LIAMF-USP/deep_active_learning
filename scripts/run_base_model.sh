@@ -51,8 +51,8 @@ NUM_BUCKETS=30
 #Hyper-parameters
 BATCH_SIZE=128
 NUM_UNITS=128
-LSTM_OUTPUT_DROPOUT=0.5
-LSTM_STATE_DROPOUT=0.5
+RECURRENT_OUTPUT_DROPOUT=0.5
+RECURRENT_STATE_DROPOUT=0.5
 EMBEDDINF_DROPOUT=0.5
 WEIGHT_DECAY=0.000001
 
@@ -82,8 +82,8 @@ python base_model.py \
     --embed-size=${EMBED_SIZE} \
     --num-units=${NUM_UNITS} \
     --num-classes=${NUM_CLASSES} \
-    --lstm-output-dropout=${LSTM_OUTPUT_DROPOUT} \
-    --lstm-state-dropout=${LSTM_STATE_DROPOUT} \
+    --recurrent-output-dropout=${RECURRENT_OUTPUT_DROPOUT} \
+    --recurrent-state-dropout=${RECURRENT_STATE_DROPOUT} \
     --embedding-dropout=${EMBEDDINF_DROPOUT} \
     --weight-decay=${WEIGHT_DECAY} \
     --bucket-width=${BUCKET_WIDTH} \
