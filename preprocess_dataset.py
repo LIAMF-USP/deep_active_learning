@@ -1,6 +1,7 @@
 import argparse
 import random
 import os
+import pickle
 
 from preprocessing.format_dataset import (remove_html_from_text,
                                           remove_url_from_text,
@@ -17,6 +18,16 @@ from utils.progress_bar import Progbar
 
 POS_LABEL = 0
 NEG_LABEL = 1
+
+
+def load(pkl_file):
+    with open(pkl_file, 'rb') as f:
+        return pickle.load(f)
+
+
+def save(save_data, pkl_file):
+    with open(pkl_file, 'wb') as f:
+        pickle.dump(save_data, f)
 
 
 def preprocess_review_text(review_text):
@@ -117,6 +128,16 @@ def transform_sentences(movie_reviews, sentence_size, word_index):
     return transformed_sentences
 
 
+def get_vocabulary(all_reviews, is_test):
+    vocab = None
+
+    if not is_test:
+        print('Loading vocabulary...')
+        vocab = get_vocab(all_reviews)
+
+    return vocab
+
+
 def load_embeddings(user_args, vocab):
     embedding_file = user_args['embedding_file']
     embed_size = user_args['embed_size']
@@ -168,6 +189,21 @@ def create_argument_parser():
                         type=str,
                         help='The dataset that should be formatted: train or test')
 
+    parser.add_argument('-trsp',
+                        '--train-save-path',
+                        type=str,
+                        help='The location to save the formatted train dataset')
+
+    parser.add_argument('-vsp',
+                        '--validation-save-path',
+                        type=str,
+                        help='The location to save the formatted validation dataset')
+
+    parser.add_argument('-tsp',
+                        '--test-save-path',
+                        type=str,
+                        help='The location to save the formatted test dataset')
+
     parser.add_argument('-ef',
                         '--embedding-file',
                         type=str,
@@ -199,7 +235,7 @@ def create_argument_parser():
     parser.add_argument('-o',
                         '--output-dir',
                         type=str,
-                        help='The path of the new formatted dataset')
+                        help='The path of the new formatted dataset (TFRecord)')
 
     return parser
 
@@ -212,31 +248,62 @@ def main():
     output_dir = user_args['output_dir']
     is_test = False if dataset_type == 'train' else True
 
-    """
-    This step is responsible for parsing the review texts, such as removing
-    HTML tags, or separating string such as he's into he and 's.
-    """
-    pos_reviews, neg_reviews = apply_data_preprocessing(user_args)
+    train_save_path = user_args['train_save_path']
+    validation_save_path = user_args['validation_save_path']
+    test_save_path = user_args['test_save_path']
 
-    """
-    This step will join both pos_reviews and neg_reviews into a single list
-    and add a label to each review sentence. Finally, these reviews will be
-    shuffled.
-    """
-    all_reviews = create_unified_dataset(pos_reviews, neg_reviews)
+    if ((os.path.exists(train_save_path) and not is_test) or
+       (os.path.exists(test_save_path) and is_test)):
 
-    vocab = None
-    if not is_test:
+            if not is_test:
+                print('Loading formatted train reviews ...')
+                all_reviews = load(train_save_path)
+
+                if os.path.exists(validation_save_path):
+                    print('Loading formatted validation reviews...')
+                    validation_reviews = load(validation_save_path)
+            else:
+                print('Loading formatted test reviews ...')
+                all_reviews = load(test_save_path)
+    else:
+        if not is_test:
+            print('Creating train and validation reviews ...')
+        else:
+            print('Creating test reviews ...')
         """
-        If we are preprocessing the training data, we should also
-        create the validation set for hyperparamenter tuning.
+        This step is responsible for parsing the review texts, such as removing
+        HTML tags, or separating string such as he's into he and 's.
         """
-        all_reviews, validation_reviews = create_validation_set(all_reviews)
-        print('Creating validation set')
-        create_validation_dir(user_args)
+        pos_reviews, neg_reviews = apply_data_preprocessing(user_args)
 
-        print('Loading vocabulary...')
-        vocab = get_vocab(all_reviews)
+        """
+        This step will join both pos_reviews and neg_reviews into a single list
+        and add a label to each review sentence. Finally, these reviews will be
+        shuffled.
+        """
+        all_reviews = create_unified_dataset(pos_reviews, neg_reviews)
+
+        if not is_test:
+            """
+            If we are preprocessing the training data, we should also
+            create the validation set for hyperparamenter tuning.
+            """
+            all_reviews, validation_reviews = create_validation_set(all_reviews)
+            print('Creating validation set')
+            create_validation_dir(user_args)
+
+            print('Saving train reviews ...')
+            save(all_reviews, train_save_path)
+            print('Saving validation reviews ...')
+            save(validation_reviews, validation_save_path)
+        else:
+            print('Saving test reviews ...')
+            save(all_reviews, test_save_path)
+
+    """
+    Load vocabulary (Only consider train dataset)
+    """
+    vocab = get_vocabulary(all_reviews, is_test)
 
     """
     Load Embeddings.

@@ -9,6 +9,10 @@ DATA_DIR="data/aclImdb"
 DATASET_TRAIN="train"
 DATASET_TEST="test"
 
+TRAIN_SAVE_PATH="data/aclImdb_formatted/train.pkl"
+VALIDATION_SAVE_PATH="data/aclImdb_formatted/validation.pkl"
+TEST_SAVE_PATH="data/aclImdb_formatted/test.pkl"
+
 GLOVE_FILE="data/glove/glove.6B.100d.txt"
 
 EMBEDDING_PATH="data/glove/glove.pkl"
@@ -22,6 +26,9 @@ echo "Preprocessing GloVe training data..."
 python preprocess_dataset.py \
     --data-dir=${DATA_DIR} \
     --dataset-type=${DATASET_TRAIN} \
+    --train-save-path=${TRAIN_SAVE_PATH} \
+    --validation-save-path=${VALIDATION_SAVE_PATH} \
+    --test-save-path=${TEST_SAVE_PATH} \
     --embedding-file=${GLOVE_FILE} \
     --embedding-path=${EMBEDDING_PATH} \
     --embedding-wordindex-path=${EMBEDDING_WORDINDEX_PATH} \
@@ -33,6 +40,9 @@ echo -e "\n\nPreprocessing GloVe test data..."
 python preprocess_dataset.py \
     --data-dir=${DATA_DIR} \
     --dataset-type=${DATASET_TEST} \
+    --train-save-path=${TRAIN_SAVE_PATH} \
+    --validation-save-path=${VALIDATION_SAVE_PATH} \
+    --test-save-path=${TEST_SAVE_PATH} \
     --embedding-file=${GLOVE_FILE} \
     --embedding-path=${EMBEDDING_PATH} \
     --embedding-wordindex-path=${EMBEDDING_WORDINDEX_PATH} \
@@ -50,6 +60,9 @@ echo "Preprocessing FastText training data..."
 python preprocess_dataset.py \
     --data-dir=${DATA_DIR} \
     --dataset-type=${DATASET_TRAIN} \
+    --train-save-path=${TRAIN_SAVE_PATH} \
+    --validation-save-path=${VALIDATION_SAVE_PATH} \
+    --test-save-path=${TEST_SAVE_PATH} \
     --embedding-file=${FASTTEXT_FILE} \
     --embedding-path=${EMBEDDING_PATH} \
     --embedding-wordindex-path=${EMBEDDING_WORDINDEX_PATH} \
@@ -61,6 +74,9 @@ echo -e "\n\nPreprocessing FastText test data..."
 python preprocess_dataset.py \
     --data-dir=${DATA_DIR} \
     --dataset-type=${DATASET_TEST} \
+    --train-save-path=${TRAIN_SAVE_PATH} \
+    --validation-save-path=${VALIDATION_SAVE_PATH} \
+    --test-save-path=${TEST_SAVE_PATH} \
     --embedding-file=${FASTTEXT_FILE} \
     --embedding-path=${EMBEDDING_PATH} \
     --embedding-wordindex-path=${EMBEDDING_WORDINDEX_PATH} \
@@ -78,6 +94,9 @@ echo "Preprocessing Word2Vec training data..."
 python preprocess_dataset.py \
     --data-dir=${DATA_DIR} \
     --dataset-type=${DATASET_TRAIN} \
+    --train-save-path=${TRAIN_SAVE_PATH} \
+    --validation-save-path=${VALIDATION_SAVE_PATH} \
+    --test-save-path=${TEST_SAVE_PATH} \
     --embedding-file=${WORD2VEC_FILE} \
     --embedding-path=${EMBEDDING_PATH} \
     --embedding-wordindex-path=${EMBEDDING_WORDINDEX_PATH} \
@@ -89,6 +108,9 @@ echo -e "\n\nPreprocessing Word2Vec test data..."
 python preprocess_dataset.py \
     --data-dir=${DATA_DIR} \
     --dataset-type=${DATASET_TEST} \
+    --train-save-path=${TRAIN_SAVE_PATH} \
+    --validation-save-path=${VALIDATION_SAVE_PATH} \
+    --test-save-path=${TEST_SAVE_PATH} \
     --embedding-file=${WORD2VEC_FILE} \
     --embedding-path=${EMBEDDING_PATH} \
     --embedding-wordindex-path=${EMBEDDING_WORDINDEX_PATH} \
