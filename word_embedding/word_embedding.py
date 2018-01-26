@@ -1,6 +1,7 @@
 import fastText
 import os
 import pickle
+import gensim
 
 import numpy as np
 
@@ -9,6 +10,7 @@ WORD_POS = 0
 UNK_TOKEN = '<unk>'
 GLOVE_STR = 'glove'
 FASTTEXT_STR = 'wiki'
+WORD2VEC_STR = 'Google'
 
 
 def get_embedding(embedding_path, embed_size, vocab, embedding_save_path=None,
@@ -18,8 +20,11 @@ def get_embedding(embedding_path, embed_size, vocab, embedding_save_path=None,
     if GLOVE_STR in embedding_path:
         word_embedding = GloVeEmbedding(embedding_path, embed_size, vocab,
                                         embedding_save_path, word_index_save_path)
-    if FASTTEXT_STR in embedding_path:
+    elif FASTTEXT_STR in embedding_path:
         word_embedding = FastTextEmbedding(embedding_path, embed_size, vocab,
+                                           embedding_save_path, word_index_save_path)
+    elif WORD2VEC_STR in embedding_path:
+        word_embedding = Word2VecEmbedding(embedding_path, embed_size, vocab,
                                            embedding_save_path, word_index_save_path)
 
     return word_embedding
@@ -104,6 +109,27 @@ class WordEmbedding:
 
         return processed_reviews
 
+    def prepare_embedding(self):
+        word_index, matrix, embedding_vocab = self.load_embedding()
+
+        self.add_zero_rows(self.embedding_matrix)
+        self.add_unknown_embedding()
+
+        for word, index in self.word_vocab[1:]:
+            is_added = self.add_word_embedding(matrix, word_index, word)
+
+            if is_added:
+                self.word_index[word] = len(self.word_index) + 1
+                self.vocab.append(word)
+
+        return self.word_index, self.embedding_matrix, self.vocab
+
+    def load_embedding(self):
+        raise NotImplementedError
+
+    def add_word_embedding(self, matrix, word_index, word):
+        raise NotImplementedError
+
 
 class GloVeEmbedding(WordEmbedding):
 
@@ -126,21 +152,14 @@ class GloVeEmbedding(WordEmbedding):
 
         return word_index, embedding_matrix, vocab
 
-    def prepare_embedding(self, progbar=None):
-        glove_index, glove_matrix, glove_vocab = self.load_embedding()
+    def add_word_embedding(self, matrix, word_index, word):
+        if word in word_index:
+            self.embedding_matrix.append(
+                matrix[word_index[word]])
 
-        self.add_zero_rows(self.embedding_matrix)
-        self.add_unknown_embedding()
+            return True
 
-        for word, index in self.word_vocab[1:]:
-
-            if word in glove_index:
-                self.embedding_matrix.append(
-                    glove_matrix[glove_index[word]])
-                self.word_index[word] = len(self.word_index) + 1
-                self.vocab.append(word)
-
-        return self.word_index, self.embedding_matrix, self.vocab
+        return False
 
 
 class FastTextEmbedding(WordEmbedding):
@@ -148,20 +167,28 @@ class FastTextEmbedding(WordEmbedding):
     def load_embedding(self, progbar=None):
         self.fasttext_model = fastText.load_model(self.embedding_path)
 
-    def prepare_embedding(self):
-        self.load_embedding()
+        return None, None, None
 
-        self.add_zero_rows(self.embedding_matrix)
-        self.add_unknown_embedding()
+    def add_word_embedding(self, matrix, word_index, word):
+        self.embedding_matrix.append(
+            self.fasttext_model.get_word_vector(word).tolist())
 
-        for word, index in self.word_vocab[1:]:
+        return True
+
+
+class Word2VecEmbedding(WordEmbedding):
+
+    def load_embedding(self, progbar=None):
+        self.word2vec_model = gensim.models.KeyedVectors.load_word2vec_format(
+            self.embedding_path, binary=True)
+
+        return None, None, None
+
+    def add_word_embedding(self, matrix, word_index, word):
+        if word in self.word2vec_model:
             self.embedding_matrix.append(
-                self.fasttext_model.get_word_vector(word).tolist())
-            self.word_index[word] = len(self.word_index) + 1
-            self.vocab.append(word)
+                self.word2vec_model[word].tolist())
 
-        return self.word_index, self.embedding_matrix, self.vocab
+            return True
 
-    def update_unknown_word(self, unknown_word, word_index, word_list):
-        self.embedding_matrix.append(self.fasttext[unknown_word])
-        self.word_index[unknown_word] = len(self.word_index) + 1
+        return False

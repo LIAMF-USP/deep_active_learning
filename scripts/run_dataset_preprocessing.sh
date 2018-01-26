@@ -67,3 +67,31 @@ python preprocess_dataset.py \
     --embed-size=${EMBED_SIZE} \
     --sentence-size=${SENTENCE_SIZE} \
     --output-dir=${FASTTEXT_OUTPUT_DIR}
+
+WORD2VEC_FILE="data/word2vec/GoogleNews-vectors-negative300.bin"
+EMBEDDING_PATH="data/word2vec/word2vec.pkl"
+EMBEDDING_WORDINDEX_PATH="data/word2vec/word2vec_word_index.pkl"
+WORD2VEC_OUTPUT_DIR="data/word2vec/aclImdb_formatted"
+EMBED_SIZE=300
+
+echo "Preprocessing Word2Vec training data..."
+python preprocess_dataset.py \
+    --data-dir=${DATA_DIR} \
+    --dataset-type=${DATASET_TRAIN} \
+    --embedding-file=${WORD2VEC_FILE} \
+    --embedding-path=${EMBEDDING_PATH} \
+    --embedding-wordindex-path=${EMBEDDING_WORDINDEX_PATH} \
+    --embed-size=${EMBED_SIZE} \
+    --sentence-size=${SENTENCE_SIZE} \
+    --output-dir=${WORD2VEC_OUTPUT_DIR}
+
+echo -e "\n\nPreprocessing Word2Vec test data..."
+python preprocess_dataset.py \
+    --data-dir=${DATA_DIR} \
+    --dataset-type=${DATASET_TEST} \
+    --embedding-file=${WORD2VEC_FILE} \
+    --embedding-path=${EMBEDDING_PATH} \
+    --embedding-wordindex-path=${EMBEDDING_WORDINDEX_PATH} \
+    --embed-size=${EMBED_SIZE} \
+    --sentence-size=${SENTENCE_SIZE} \
+    --output-dir=${WORD2VEC_OUTPUT_DIR}
