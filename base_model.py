@@ -165,6 +165,16 @@ def create_argument_parser():
                         type=float,
                         help='Dropout value for embedding layer')
 
+    parser.add_argument('-cp',
+                        '--clip-gradients',
+                        type=bool_arguments,
+                        help='If gradient clipping should be performed')
+
+    parser.add_argument('-mxn',
+                        '--max-norm',
+                        type=int,
+                        help='The max norm to clip the gradients, if --clip-gradients=True')
+
     parser.add_argument('-wd',
                         '--weight-decay',
                         type=float,

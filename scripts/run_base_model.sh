@@ -55,6 +55,8 @@ RECURRENT_OUTPUT_DROPOUT=0.5
 RECURRENT_STATE_DROPOUT=0.5
 EMBEDDING_DROPOUT=0.5
 WEIGHT_DECAY=0.000001
+CLIP_GRADIENTS=0
+MAX_NORM=5
 
 TRAIN_FILE="$GLOVE_TRAIN_FILE"
 VALIDATION_FILE="$GLOVE_VALIDATION_FILE"
@@ -85,6 +87,8 @@ python base_model.py \
     --recurrent-output-dropout=${RECURRENT_OUTPUT_DROPOUT} \
     --recurrent-state-dropout=${RECURRENT_STATE_DROPOUT} \
     --embedding-dropout=${EMBEDDING_DROPOUT} \
+    --clip-gradients=${CLIP_GRADIENTS} \
+    --max-norm=${MAX_NORM} \
     --weight-decay=${WEIGHT_DECAY} \
     --bucket-width=${BUCKET_WIDTH} \
     --num-buckets=${NUM_BUCKETS} \

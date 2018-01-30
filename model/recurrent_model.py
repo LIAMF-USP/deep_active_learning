@@ -14,6 +14,8 @@ class RecurrentConfig(Config):
         self.recurrent_state_dropout = user_args['recurrent_state_dropout']
         self.embedding_dropout = user_args['embedding_dropout']
         self.weight_decay = user_args['weight_decay']
+        self.clip_gradients = user_args['clip_gradients']
+        self.max_norm = user_args['max_norm']
 
 
 class RecurrentModel(SentimentAnalysisModel):
@@ -64,30 +66,29 @@ class RecurrentModel(SentimentAnalysisModel):
         x_hat = self.add_embedding(inputs)
 
         with tf.name_scope('recurrent_layer'):
-            lstm_cell = tf.nn.rnn_cell.LSTMCell(num_units)
+            cell = tf.nn.rnn_cell.LSTMCell(num_units)
+
             drop_recurrent_cell = tf.nn.rnn_cell.DropoutWrapper(
-                    lstm_cell,
+                    cell,
                     output_keep_prob=self.recurrent_output_dropout_placeholder,
                     state_keep_prob=self.recurrent_state_dropout_placeholder,
                     variational_recurrent=True,
+                    input_size=self.config.embed_size,
                     dtype=tf.float32)
 
             """
             The dynamic_rnn outputs a 0 for every output after it has reached
             the end of a sentence. When doing sequence classification,
             we need the last relevant value from the outputs matrix.
-
-            Since we are using a single recurrent cell, this can be achieved by getting
-            the output from the cell.h returned from the dynamic_rnn method.
             """
-            _, cell = tf.nn.dynamic_rnn(drop_recurrent_cell, x_hat,
-                                        sequence_length=size,
-                                        dtype=tf.float32)
+            _, state = tf.nn.dynamic_rnn(drop_recurrent_cell, x_hat,
+                                         sequence_length=size,
+                                         dtype=tf.float32)
 
             """
             This variable will have shape [batch_size, num_units]
             """
-            recurrent_output = cell.h
+            recurrent_output = state.h
             tf.summary.histogram('recurrent_output', recurrent_output)
 
         with tf.name_scope('output_layer'):
@@ -126,9 +127,16 @@ class RecurrentModel(SentimentAnalysisModel):
 
     def add_training_op(self, loss):
         with tf.name_scope('train'):
-            train = tf.train.AdamOptimizer().minimize(loss)
+            optimizer = tf.train.AdamOptimizer()
+            gradients, variables = zip(*optimizer.compute_gradients(loss))
 
-        return train
+            if self.config.clip_gradients:
+                gradients, _ = tf.clip_by_global_norm(
+                    gradients, clip_norm=self.config.max_norm)
+
+            train_op = optimizer.apply_gradients(zip(gradients, variables))
+
+            return train_op
 
     def add_evaluation_op(self, labels):
         with tf.name_scope('validation'):
