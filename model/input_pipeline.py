@@ -29,7 +29,9 @@ class SentimentAnalysisDataset:
         return tokens, label, size
 
     def create_dataset(self):
-        sentiment_dataset = tf.data.TFRecordDataset(self.data_file).map(self.parser)
+        sentiment_dataset = tf.data.TFRecordDataset(self.data_file)
+        sentiment_dataset = sentiment_dataset.cache()
+        sentiment_dataset = sentiment_dataset.map(self.parser, num_parallel_calls=8)
 
         if self.perform_shuffle:
             sentiment_dataset = sentiment_dataset.shuffle(buffer_size=self.batch_size * 2)
@@ -51,9 +53,11 @@ class SentimentAnalysisDataset:
         def reduce_func(bucket_key, widowed_data):
             return batching_func(widowed_data)
 
-        self.sentiment_dataset = sentiment_dataset.apply(
+        sentiment_dataset = sentiment_dataset.apply(
             tf.contrib.data.group_by_window(
                 key_func=key_func, reduce_func=reduce_func, window_size=self.batch_size))
+
+        self.sentiment_dataset = sentiment_dataset.prefetch(buffer_size=2 * self.batch_size)
 
         return self.sentiment_dataset
 
