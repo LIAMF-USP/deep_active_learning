@@ -127,7 +127,7 @@ class RecurrentModel(SentimentAnalysisModel):
 
     def add_training_op(self, loss):
         with tf.name_scope('train'):
-            optimizer = tf.train.AdamOptimizer()
+            optimizer = tf.train.AdamOptimizer(learning_rate=self.config.learning_rate)
             gradients, variables = zip(*optimizer.compute_gradients(loss))
 
             if self.config.clip_gradients:

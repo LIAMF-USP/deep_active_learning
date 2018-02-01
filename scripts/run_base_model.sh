@@ -42,6 +42,7 @@ NUM_EPOCHS=18
 NUM_CLASSES=2
 
 PERFORM_SHUFFLE=1
+SAVE_GRAPH=1
 USE_TEST=0
 
 #Bucket paramets
@@ -49,6 +50,7 @@ BUCKET_WIDTH=30
 NUM_BUCKETS=30
 
 #Hyper-parameters
+LEARNING_RATE=0.001
 BATCH_SIZE=128
 NUM_UNITS=128
 RECURRENT_OUTPUT_DROPOUT=0.5
@@ -78,6 +80,7 @@ python base_model.py \
     --tensorboard-dir=${TENSORBOARD_DIR} \
     --embedding-file=${EMBEDDING_FILE} \
     --embedding-pickle=${EMBEDDING_PICKLE} \
+    --learning-rate=${LEARNING_RATE} \
     --batch-size=${BATCH_SIZE} \
     --num-epochs=${NUM_EPOCHS} \
     --perform-shuffle=${PERFORM_SHUFFLE} \
@@ -92,4 +95,5 @@ python base_model.py \
     --weight-decay=${WEIGHT_DECAY} \
     --bucket-width=${BUCKET_WIDTH} \
     --num-buckets=${NUM_BUCKETS} \
-    --use-test=${USE_TEST}
+    --use-test=${USE_TEST} \
+    --save-graph=${SAVE_GRAPH}

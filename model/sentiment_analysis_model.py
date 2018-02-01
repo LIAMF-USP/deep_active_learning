@@ -14,6 +14,7 @@ class Config:
     """
 
     def __init__(self, user_args):
+        self.learning_rate = user_args['learning_rate']
         self.batch_size = user_args['batch_size']
         self.num_epochs = user_args['num_epochs']
         self.embed_size = user_args['embed_size']
@@ -22,6 +23,7 @@ class Config:
         self.num_validation = user_args['num_validation']
         self.num_test = user_args['num_test']
         self.use_test = user_args['use_test']
+        self.model_name = user_args['model_name']
 
 
 class SentimentAnalysisModel(Model):
@@ -116,6 +118,8 @@ class SentimentAnalysisModel(Model):
         val_accuracies = []
         print('Training model...')
 
+        best_accuracy = -1
+
         for epoch in range(self.config.num_epochs):
             print('Running epoch {}'.format(epoch))
             total_batch = dataset.train_batches
@@ -129,6 +133,9 @@ class SentimentAnalysisModel(Model):
             val_accuracy = self.evaluate(sess, dataset, total_batch)
             val_accuracies.append(val_accuracy)
             train_accuracies.append(train_accuracy)
+
+            if val_accuracy > best_accuracy:
+                best_accuracy = val_accuracy
 
             print('Train Accuracy for epoch {}: {}'.format(epoch, train_accuracy))
             print('Validation Accuracy for epoch {}: {}'.format(epoch, val_accuracy))
@@ -145,4 +152,4 @@ class SentimentAnalysisModel(Model):
             accuracy = self.evaluate(sess, dataset, total_batch)
             print('Test Accuracy: {}'.format(accuracy))
 
-        return train_accuracies, val_accuracies
+        return best_accuracy, train_accuracies, val_accuracies

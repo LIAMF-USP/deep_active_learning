@@ -117,6 +117,11 @@ def create_argument_parser():
                         type=str,
                         help='The path of embedding matrix pickle file')
 
+    parser.add_argument('-lr',
+                        '--learning-rate',
+                        type=float,
+                        help='The learning rate to use during training')
+
     parser.add_argument('-bs',
                         '--batch-size',
                         type=int,
@@ -195,13 +200,15 @@ def create_argument_parser():
                         type=bool_arguments,
                         help='Define if the model should check accuracy on test dataset')
 
+    parser.add_argument('-sg',
+                        '--save-graph',
+                        type=bool_arguments,
+                        help='Define if an accuracy graph should be saved')
+
     return parser
 
 
-def main():
-    parser = create_argument_parser()
-    user_args = vars(parser.parse_args())
-
+def run_model(**user_args):
     print('Creating dataset...')
     input_pipeline = create_dataset(user_args)
     print('Calculating number of batches...')
@@ -228,10 +235,23 @@ def main():
         init = tf.global_variables_initializer()
         sess.run(init)
 
-        train_accuracies, val_accuracies = recurrent_model.fit(sess, input_pipeline, writer)
+        best_accuracy, train_accuracies, val_accuracies = recurrent_model.fit(
+            sess, input_pipeline, writer)
 
-    graphs_dir = user_args['graphs_dir']
-    save_accuracy_graph(train_accuracies, val_accuracies, graphs_dir, save_name)
+    save_graph = user_args['save_graph']
+
+    if save_graph:
+        graphs_dir = user_args['graphs_dir']
+        save_accuracy_graph(train_accuracies, val_accuracies, graphs_dir, save_name)
+
+    return best_accuracy
+
+
+def main():
+    parser = create_argument_parser()
+    user_args = vars(parser.parse_args())
+
+    return run_model(**user_args)
 
 
 if __name__ == '__main__':
