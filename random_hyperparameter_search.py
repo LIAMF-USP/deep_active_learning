@@ -2,6 +2,7 @@ import argparse
 import random
 
 import numpy as np
+import tensorflow as tf
 
 from collections import namedtuple
 from pathlib import Path
@@ -52,8 +53,8 @@ word_embeddings = {
     2: Word2Vec
 }
 
-BATCH_SIZES = [32, 64, 128, 256]
-NUM_EPOCHS = [10, 12, 14, 16, 18, 20]
+BATCH_SIZES = [32, 64, 128]
+NUM_EPOCHS = [4, 8, 10, 12, 14, 16, 18, 20]
 
 
 class RandomParameterSearch:
@@ -144,11 +145,12 @@ class RandomParameterSearch:
 
         best_model_path = save_path / 'best_model_parameters.txt'
 
-        with open(best_model_path, 'w') as best_model:
+        with open(best_model_path, 'w') as best_model_file:
+            best_model_file.write(best_model + '\n')
             for parameter in parameters:
-                best_model.write(parameter + '\n')
+                best_model_file.write(parameter + '\n')
 
-            best_model.write('accuracy: {}'.format(best_accuracy))
+            best_model_file.write('accuracy: {}'.format(best_accuracy))
 
     def find_best_parameters(self, save_path, save_graph=False, verbose=True):
         best_accuracy = -1
@@ -159,40 +161,47 @@ class RandomParameterSearch:
 
             if verbose:
                 print('Evaluating model:\n{}'.format(self.model_name))
+            try:
+                accuracy = run_model(
+                    train_file=self.train_file,
+                    validation_file=self.validation_file,
+                    test_file=self.test_file,
+                    num_train=self.num_train,
+                    num_validation=self.num_validation,
+                    num_test=self.num_test,
+                    graphs_dir=self.graphs_dir,
+                    model_name=self.model_name,
+                    tensorboard_dir=self.tensorboard_dir,
+                    embedding_file=self.embedding_file,
+                    embedding_pickle=self.embedding_pickle,
+                    learning_rate=self.learning_rate,
+                    batch_size=self.batch_size,
+                    num_epochs=self.num_epochs,
+                    perform_shuffle=self.perform_shuffle,
+                    embed_size=self.embed_size,
+                    num_units=self.num_units,
+                    num_classes=self.num_classes,
+                    recurrent_output_dropout=self.recurrent_output_dropout,
+                    recurrent_state_dropout=self.recurrent_state_dropout,
+                    embedding_dropout=self.embedding_dropout,
+                    clip_gradients=self.clip_gradients,
+                    max_norm=self.max_norm,
+                    weight_decay=self.weight_decay,
+                    bucket_width=self.bucket_width,
+                    num_buckets=self.num_buckets,
+                    use_test=self.use_test,
+                    save_graph=self.save_graph)
 
-            accuracy = run_model(
-                train_file=self.train_file,
-                validation_file=self.validation_file,
-                test_file=self.test_file,
-                num_train=self.num_train,
-                num_validation=self.num_validation,
-                num_test=self.num_test,
-                graphs_dir=self.graphs_dir,
-                model_name=self.model_name,
-                tensorboard_dir=self.tensorboard_dir,
-                embedding_file=self.embedding_file,
-                embedding_pickle=self.embedding_pickle,
-                learning_rate=self.learning_rate,
-                batch_size=self.batch_size,
-                num_epochs=self.num_epochs,
-                perform_shuffle=self.perform_shuffle,
-                embed_size=self.embed_size,
-                num_units=self.num_units,
-                num_classes=self.num_classes,
-                recurrent_output_dropout=self.recurrent_output_dropout,
-                recurrent_state_dropout=self.recurrent_state_dropout,
-                embedding_dropout=self.embedding_dropout,
-                clip_gradients=self.clip_gradients,
-                max_norm=self.max_norm,
-                weight_decay=self.weight_decay,
-                bucket_width=self.bucket_width,
-                num_buckets=self.num_buckets,
-                use_test=self.use_test,
-                save_graph=self.save_graph)
+                if accuracy > best_accuracy:
+                    best_accuracy = accuracy
+                    best_model = self.model_name
 
-            if accuracy > best_accuracy:
-                best_accuracy = accuracy
-                best_model = self.model_name
+            except tf.errors.InvalidArgumentError:
+                print('Error running model ...')
+                continue
+            except tf.errors.ResourceExhaustedError:
+                print('Error running model ...')
+                continue
 
         if verbose:
             print('Best model:\n{}'.format(best_model))
@@ -201,7 +210,8 @@ class RandomParameterSearch:
         if verbose:
             print('Saving best model parameters ...')
 
-        self.save_parameters(best_model, best_accuracy, save_path)
+        if best_model:
+            self.save_parameters(best_model, best_accuracy, save_path)
 
 
 def create_argument_parser():
