@@ -77,6 +77,11 @@ def create_argument_parser():
                         help='The location of the test file',
                         required=True)
 
+    parser.add_argument('-sm',
+                        '--saved-model-folder',
+                        type=str,
+                        help='Location to search/save models. The model name variable will be used for searching')  # noqa
+
     parser.add_argument('-nt',
                         '--num-train',
                         type=int,
@@ -226,6 +231,8 @@ def run_model(**user_args):
     recurrent_config = RecurrentConfig(user_args)
     recurrent_model = RecurrentModel(recurrent_config, embedding_matrix)
 
+    saved_model_path = user_args['saved_model_folder']
+
     with tf.Session() as sess:
         writer, save_name = initialize_tensorboard(user_args)
         writer.add_graph(sess.graph)
@@ -236,7 +243,7 @@ def run_model(**user_args):
         sess.run(init)
 
         best_accuracy, train_accuracies, val_accuracies = recurrent_model.fit(
-            sess, input_pipeline, writer)
+            sess, input_pipeline, saved_model_path, writer)
 
     save_graph = user_args['save_graph']
 

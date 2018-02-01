@@ -17,6 +17,8 @@ WORD2VEC_TRAIN_FILE="data/word2vec/aclImdb_formatted/train/train.tfrecord"
 WORD2VEC_VALIDATION_FILE="data/word2vec/aclImdb_formatted/val/val.tfrecord"
 WORD2VEC_TEST_FILE="data/word2vec/aclImdb_formatted/test/test.tfrecord"
 
+SAVED_MODEL_FOLDER="saved_models"
+
 NUM_TRAIN=22500
 NUM_VALIDATION=2500
 NUM_TEST=25000
@@ -38,7 +40,7 @@ WORD2VEC_EMBED_SIZE=300
 
 GRAPHS_DIR='graphs'
 
-NUM_EPOCHS=18
+NUM_EPOCHS=10
 NUM_CLASSES=2
 
 PERFORM_SHUFFLE=1
@@ -72,6 +74,7 @@ python base_model.py \
     --train-file=${TRAIN_FILE} \
     --validation-file=${VALIDATION_FILE} \
     --test-file=${TEST_FILE} \
+    --saved-model-folder=${SAVED_MODEL_FOLDER} \
     --num-train=${NUM_TRAIN} \
     --num-validation=${NUM_VALIDATION} \
     --num-test=${NUM_TEST} \

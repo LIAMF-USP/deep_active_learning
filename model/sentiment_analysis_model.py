@@ -1,3 +1,5 @@
+import os
+
 import tensorflow as tf
 
 from model.model import Model
@@ -113,10 +115,53 @@ class SentimentAnalysisModel(Model):
         data_batch, labels_batch, size_batch = dataset.make_batch()
         self.build_graph(data_batch, labels_batch, size_batch)
 
-    def fit(self, sess, dataset, writer=None):
+    def create_saver(self, saved_model_path):
+        if not os.path.exists(saved_model_path):
+            os.makedirs(saved_model_path)
+
+        self.saver = tf.train.Saver()
+
+    def check_saved_model(self, sess, dataset, saved_model_path):
+        if os.path.exists(saved_model_path + '.index'):
+            print('Loading saved model ...')
+            self.saver.restore(sess, saved_model_path)
+
+            sess.run(dataset.validation_iterator)
+            total_batch = dataset.validation_batches
+            val_accuracy = self.evaluate(sess, dataset, total_batch)
+
+            sess.run(dataset.train_iterator)
+            total_batch = dataset.train_batches
+            train_accuracy = self.evaluate(sess, dataset, total_batch)
+
+            print('Train accuracy for saved model: {:.3f}'.format(train_accuracy))
+            print('Validation accuracy for saved model: {:.3f}'.format(val_accuracy))
+
+            return True
+
+        return False
+
+    def run_test_accuracy(self, sess, dataset):
+        if self.config.use_test:
+            sess.run(dataset.test_iterator)
+            total_batch = dataset.test_batches
+            accuracy = self.evaluate(sess, dataset, total_batch)
+            print('Test Accuracy: {}'.format(accuracy))
+
+            return accuracy
+
+    def fit(self, sess, dataset, saved_model_path=None, writer=None):
         train_accuracies = []
         val_accuracies = []
         print('Training model...')
+
+        self.create_saver(saved_model_path)
+        saved_model_path = os.path.join(
+            saved_model_path, self.config.model_name + '.ckpt')
+
+        if self.check_saved_model(sess, dataset, saved_model_path):
+            best_accuracy = self.run_test_accuracy(sess, dataset)
+            return best_accuracy, train_accuracies, val_accuracies
 
         best_accuracy = -1
 
@@ -136,6 +181,7 @@ class SentimentAnalysisModel(Model):
 
             if val_accuracy > best_accuracy:
                 best_accuracy = val_accuracy
+                self.saver.save(sess, saved_model_path)
 
             print('Train Accuracy for epoch {}: {}'.format(epoch, train_accuracy))
             print('Validation Accuracy for epoch {}: {}'.format(epoch, val_accuracy))
@@ -147,9 +193,6 @@ class SentimentAnalysisModel(Model):
         add_array_to_summary_writer(writer, train_accuracies, 'train_accuracy')
 
         if self.config.use_test:
-            sess.run(dataset.test_iterator)
-            total_batch = dataset.test_batches
-            accuracy = self.evaluate(sess, dataset, total_batch)
-            print('Test Accuracy: {}'.format(accuracy))
+            self.run_test_accuracy(sess, dataset)
 
         return best_accuracy, train_accuracies, val_accuracies

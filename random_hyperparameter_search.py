@@ -68,6 +68,7 @@ class RandomParameterSearch:
 
         self.tensorboard_dir = 'tensorboard_logs'
         self.graphs_dir = 'graphs'
+        self.saved_model_folder = 'saved_models'
 
         self.perform_shuffle = 1
         self.num_classes = 2
@@ -166,6 +167,7 @@ class RandomParameterSearch:
                     train_file=self.train_file,
                     validation_file=self.validation_file,
                     test_file=self.test_file,
+                    saved_model_folder=self.saved_model_folder,
                     num_train=self.num_train,
                     num_validation=self.num_validation,
                     num_test=self.num_test,
