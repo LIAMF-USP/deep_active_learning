@@ -5,6 +5,7 @@ python:
 install:
     # using tensorflow-gpu on travis does not work
   - pip3 install tensorflow
+  - pip3 install numpy --upgrade
   - pip3 install nose2
   - pip3 install flake8
   - pip3 install scipy
