@@ -198,11 +198,11 @@ class RandomParameterSearch:
                     best_accuracy = accuracy
                     best_model = self.model_name
 
-            except tf.errors.InvalidArgumentError:
-                print('Error running model ...')
+            except tf.errors.InvalidArgumentError as e:
+                print('Error running model: {}'.format(str(e)))
                 continue
-            except tf.errors.ResourceExhaustedError:
-                print('Error running model ...')
+            except tf.errors.ResourceExhaustedError as e:
+                print('Error running model: {}'.format(str(e)))
                 continue
 
         if verbose:

@@ -251,6 +251,8 @@ def run_model(**user_args):
         graphs_dir = user_args['graphs_dir']
         save_accuracy_graph(train_accuracies, val_accuracies, graphs_dir, save_name)
 
+    tf.reset_default_graph()
+
     return best_accuracy
 
 

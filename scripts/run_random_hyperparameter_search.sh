@@ -4,7 +4,7 @@
 
 set -e
 
-NUM_SAMPLES=1
+NUM_SAMPLES=60
 SAVE_FOLDER='best_model'
 
 python random_hyperparameter_search.py \
