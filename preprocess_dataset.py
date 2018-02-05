@@ -176,6 +176,26 @@ def create_validation_dir(user_args):
         os.makedirs(validation_path)
 
 
+def prepare_output_dir(output_dir):
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)
+
+    train_dir = os.path.join(output_dir, 'train')
+
+    if not os.path.exists(train_dir):
+        os.makedirs(train_dir)
+
+    validation_dir = os.path.join(output_dir, 'val')
+
+    if not os.path.exists(validation_dir):
+        os.makedirs(validation_dir)
+
+    test_dir = os.path.join(output_dir, 'test')
+
+    if not os.path.exists(test_dir):
+        os.makedirs(test_dir)
+
+
 def create_argument_parser():
     parser = argparse.ArgumentParser()
 
@@ -237,6 +257,12 @@ def create_argument_parser():
                         type=str,
                         help='The path of the new formatted dataset (TFRecord)')
 
+    parser.add_argument('-dg',
+                        '--debug',
+                        type=int,
+                        default=0,
+                        help='If the scriptshould create a debug dataset')
+
     return parser
 
 
@@ -246,11 +272,14 @@ def main():
 
     dataset_type = user_args['dataset_type']
     output_dir = user_args['output_dir']
+    prepare_output_dir(output_dir)
     is_test = False if dataset_type == 'train' else True
 
     train_save_path = user_args['train_save_path']
     validation_save_path = user_args['validation_save_path']
     test_save_path = user_args['test_save_path']
+
+    validation_reviews = None
 
     if ((os.path.exists(train_save_path) and not is_test) or
        (os.path.exists(test_save_path) and is_test)):
@@ -299,6 +328,17 @@ def main():
         else:
             print('Saving test reviews ...')
             save(all_reviews, test_save_path)
+
+    if user_args['debug'] == 1:
+        if not is_test:
+            print('Creating train and validation reviews [DEBUG] ...')
+        else:
+            print('Creating test reviews [DEBUG] ...')
+
+        all_reviews = all_reviews[0:1000]
+
+        if validation_reviews:
+            validation_reviews = validation_reviews[0:500]
 
     """
     Load vocabulary (Only consider train dataset)
