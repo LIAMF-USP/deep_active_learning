@@ -242,8 +242,12 @@ def run_model(**user_args):
         init = tf.global_variables_initializer()
         sess.run(init)
 
-        best_accuracy, train_accuracies, val_accuracies = recurrent_model.fit(
-            sess, input_pipeline, saved_model_path, writer)
+        try:
+            best_accuracy, train_accuracies, val_accuracies = recurrent_model.fit(
+                sess, input_pipeline, saved_model_path, writer)
+        except tf.errors.InvalidArgumentError:
+            print('Invalid set of arguments ... ')
+            best_accuracy = -1
 
     save_graph = user_args['save_graph']
 
