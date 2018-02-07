@@ -1,5 +1,6 @@
 import os
 
+import numpy as np
 import tensorflow as tf
 
 from model.model import Model
@@ -90,6 +91,33 @@ class SentimentAnalysisModel(Model):
             except tf.errors.OutOfRangeError:
                 return ac_accuracy / ac_total
 
+    def monte_carlo_dropout_evaluate(self, sess, dataset):
+        num_samples = 10
+        sum_preds = np.zeros(shape=(self.config.num_validation, self.config.num_classes))
+        all_labels = np.zeros(shape=(self.config.num_validation))
+
+        for i in range(num_samples):
+            batch_pos = 0
+            sess.run(dataset.validation_iterator)
+            while True:
+                try:
+                    feed = self.create_feed_dict()
+                    preds, labels = sess.run([self.pred, self.labels], feed_dict=feed)
+
+                    batch_aux = batch_pos + preds.shape[0]
+                    sum_preds[batch_pos:batch_aux] += preds
+                    all_labels[batch_pos:batch_aux] = labels
+
+                    batch_pos = batch_aux
+                except tf.errors.OutOfRangeError:
+                    break
+
+        sum_preds /= num_samples
+        predictions = np.argmax(sum_preds, axis=1)
+        correct_pred = np.equal(predictions, all_labels)
+
+        return np.mean(correct_pred)
+
     def run_epoch(self, sess, dataset, writer, epoch, total_batch):
         if self.verbose:
             progbar = Progbar(target=total_batch)
@@ -169,6 +197,7 @@ class SentimentAnalysisModel(Model):
             print('Running epoch {}'.format(epoch))
             total_batch = dataset.train_batches
             self.run_epoch(sess, dataset, writer, epoch, total_batch)
+            self.monte_carlo_dropout_evaluate(sess, dataset)
 
             sess.run(dataset.train_iterator)
             train_accuracy = self.evaluate(sess, dataset, total_batch)
