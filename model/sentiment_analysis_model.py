@@ -55,7 +55,7 @@ class SentimentAnalysisModel(Model):
         """
         return NotImplementedError()
 
-    def evaluate(self, sess, dataset, total_batch):
+    def evaluate(self, sess, total_batch):
         """
         This method will be used to calculate the accuracy metric over
         a batch of examples from the validation or test set.
@@ -99,6 +99,10 @@ class SentimentAnalysisModel(Model):
         for i in range(num_samples):
             batch_pos = 0
             sess.run(dataset.validation_iterator)
+
+            if self.verbose:
+                progbar = Progbar(target=num_samples)
+
             while True:
                 try:
                     feed = self.create_feed_dict()
@@ -111,6 +115,9 @@ class SentimentAnalysisModel(Model):
                     batch_pos = batch_aux
                 except tf.errors.OutOfRangeError:
                     break
+
+            if self.verbose:
+                progbar.update(i + 1, [])
 
         sum_preds /= num_samples
         predictions = np.argmax(sum_preds, axis=1)
@@ -156,11 +163,11 @@ class SentimentAnalysisModel(Model):
 
             sess.run(dataset.validation_iterator)
             total_batch = dataset.validation_batches
-            val_accuracy = self.evaluate(sess, dataset, total_batch)
+            val_accuracy = self.evaluate(sess, total_batch)
 
             sess.run(dataset.train_iterator)
             total_batch = dataset.train_batches
-            train_accuracy = self.evaluate(sess, dataset, total_batch)
+            train_accuracy = self.evaluate(sess, total_batch)
 
             print('Train accuracy for saved model: {:.3f}'.format(train_accuracy))
             print('Validation accuracy for saved model: {:.3f}'.format(val_accuracy))
@@ -173,7 +180,7 @@ class SentimentAnalysisModel(Model):
         if self.config.use_test:
             sess.run(dataset.test_iterator)
             total_batch = dataset.test_batches
-            accuracy = self.evaluate(sess, dataset, total_batch)
+            accuracy = self.evaluate(sess, total_batch)
             print('Test Accuracy: {}'.format(accuracy))
 
             return accuracy
@@ -197,14 +204,16 @@ class SentimentAnalysisModel(Model):
             print('Running epoch {}'.format(epoch))
             total_batch = dataset.train_batches
             self.run_epoch(sess, dataset, writer, epoch, total_batch)
-            self.monte_carlo_dropout_evaluate(sess, dataset)
 
             sess.run(dataset.train_iterator)
-            train_accuracy = self.evaluate(sess, dataset, total_batch)
+            train_accuracy = self.evaluate(sess, total_batch)
 
-            sess.run(dataset.validation_iterator)
             total_batch = dataset.validation_batches
-            val_accuracy = self.evaluate(sess, dataset, total_batch)
+            sess.run(dataset.validation_iterator)
+            val_accuracy = self.evaluate(sess, total_batch)
+
+            mc_accuracy = self.monte_carlo_dropout_evaluate(sess, dataset)
+
             val_accuracies.append(val_accuracy)
             train_accuracies.append(train_accuracy)
 
@@ -214,6 +223,7 @@ class SentimentAnalysisModel(Model):
 
             print('Train Accuracy for epoch {}: {}'.format(epoch, train_accuracy))
             print('Validation Accuracy for epoch {}: {}'.format(epoch, val_accuracy))
+            print('Validation Accuracy (MC Dropout) for epoch {}: {}'.format(epoch, mc_accuracy))
             print()
 
             sess.run(dataset.train_iterator)
