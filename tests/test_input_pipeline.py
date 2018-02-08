@@ -1,6 +1,7 @@
+import numpy as np
 import tensorflow as tf
 
-from model.input_pipeline import InputPipeline
+from model.input_pipeline import InputPipeline, NumpyDataset
 
 
 class InputPipelineTests(tf.test.TestCase):
@@ -80,3 +81,35 @@ class InputPipelineTests(tf.test.TestCase):
                     break
 
             self.assertEqual(num_batches, expected_num_batches)
+
+    def test_numpy_dataset(self):
+        reviews = np.array([
+            [1, 2, 3, 4, 5],
+            [6, 7, 8],
+            [9, 10, 11, 12, 13],
+            [14, 15]]
+        )
+        labels = np.array([1, 0, 1, 1])
+        sizes = np.array([10, 20, 30, 42])
+
+        data = (reviews, labels, sizes)
+
+        dataset = NumpyDataset(data, batch_size=1, perform_shuffle=False,
+                               bucket_width=1, num_buckets=1)
+        numpy_dataset = dataset.create_dataset()
+
+        with tf.Session() as sess:
+            index = 0
+            value = numpy_dataset.make_one_shot_iterator()
+
+            while True:
+                try:
+                    review, label, size = sess.run(value.get_next())
+
+                    self.assertEqual(review.tolist()[0], reviews[index])
+                    self.assertEqual(label, labels[index])
+                    self.assertEqual(size, sizes[index])
+
+                    index += 1
+                except tf.errors.OutOfRangeError:
+                    break

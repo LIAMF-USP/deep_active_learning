@@ -3,8 +3,8 @@ import tensorflow as tf
 
 class SentimentAnalysisDataset:
 
-    def __init__(self, data_file, batch_size, perform_shuffle, bucket_width, num_buckets):
-        self.data_file = data_file
+    def __init__(self, data, batch_size, perform_shuffle, bucket_width, num_buckets):
+        self.data = data
         self.batch_size = batch_size
         self.perform_shuffle = perform_shuffle
         self.bucket_width = bucket_width
@@ -28,10 +28,15 @@ class SentimentAnalysisDataset:
 
         return tokens, label, size
 
-    def create_dataset(self):
-        sentiment_dataset = tf.data.TFRecordDataset(self.data_file)
+    def init_dataset(self):
+        sentiment_dataset = tf.data.TFRecordDataset(self.data)
         sentiment_dataset = sentiment_dataset.cache()
         sentiment_dataset = sentiment_dataset.map(self.parser, num_parallel_calls=8)
+
+        return sentiment_dataset
+
+    def create_dataset(self):
+        sentiment_dataset = self.init_dataset()
 
         if self.perform_shuffle:
             sentiment_dataset = sentiment_dataset.shuffle(buffer_size=self.batch_size * 2)
@@ -60,6 +65,29 @@ class SentimentAnalysisDataset:
         self.sentiment_dataset = sentiment_dataset.prefetch(buffer_size=2 * self.batch_size)
 
         return self.sentiment_dataset
+
+
+class NumpyDataset(SentimentAnalysisDataset):
+    def init_dataset(self):
+        """
+        The data for this function is three distict numpy arrays, containing
+        the movie reviews word-ids, labels and sizes.
+
+        It will them create a dataset based on this array.
+        """
+
+        movie_reviews, labels, sizes = self.data
+
+        def review_iterator():
+            for review, label, size in zip(movie_reviews, labels, sizes):
+                yield (review, label, size)
+
+        dataset = tf.data.Dataset.from_generator(
+            lambda: review_iterator(), (tf.int64, tf.int64, tf.int64),
+            (tf.TensorShape([None]), tf.TensorShape([]), tf.TensorShape([]))
+        )
+
+        return dataset
 
 
 class InputPipeline:
