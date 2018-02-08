@@ -88,6 +88,7 @@ class Model:
         self.pred = self.add_prediction_op(inputs, size)  # Too slow, look into
         self.loss = self.add_loss_op(self.pred, labels)
         self.train = self.add_training_op(self.loss)
+        self.labels = labels
 
         self.add_evaluation_op(labels)
         self.summ = tf.summary.merge_all()
