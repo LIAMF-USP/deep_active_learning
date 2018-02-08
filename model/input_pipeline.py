@@ -95,10 +95,10 @@ class InputPipeline:
             self.train_files, self.batch_size, self.perform_shuffle,
             self.bucket_width, self.num_buckets)
         validation_dataset = SentimentAnalysisDataset(
-            self.validation_files, self.batch_size, self.perform_shuffle,
+            self.validation_files, self.batch_size, False,
             self.bucket_width, self.num_buckets)
         test_dataset = SentimentAnalysisDataset(
-            self.test_files, self.batch_size, self.perform_shuffle,
+            self.test_files, self.batch_size, False,
             self.bucket_width, self.num_buckets)
 
         self.train_dataset = train_dataset.create_dataset()
