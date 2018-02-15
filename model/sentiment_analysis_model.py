@@ -93,7 +93,7 @@ class SentimentAnalysisModel(Model):
 
     def monte_carlo_dropout_evaluate(self, sess, dataset):
         num_samples = 10
-        sum_preds = np.zeros(shape=(self.config.num_validation, self.config.num_classes))
+        all_preds = np.zeros(shape=(self.config.num_validation, num_samples))
         all_labels = np.zeros(shape=(self.config.num_validation))
 
         for i in range(num_samples):
@@ -108,8 +108,10 @@ class SentimentAnalysisModel(Model):
                     feed = self.create_feed_dict()
                     preds, labels = sess.run([self.pred, self.labels], feed_dict=feed)
 
+                    preds = np.argmax(preds, axis=1)
+
                     batch_aux = batch_pos + preds.shape[0]
-                    sum_preds[batch_pos:batch_aux] += preds
+                    all_preds[batch_pos:batch_aux, i] = preds
                     all_labels[batch_pos:batch_aux] = labels
 
                     batch_pos = batch_aux
@@ -119,8 +121,12 @@ class SentimentAnalysisModel(Model):
             if self.verbose:
                 progbar.update(i + 1, [])
 
-        sum_preds /= num_samples
-        predictions = np.argmax(sum_preds, axis=1)
+        all_preds = all_preds.astype(dtype=np.int64)
+        predictions = np.zeros(shape=(self.config.num_validation))
+
+        for index, row in enumerate(all_preds):
+            predictions[index] = np.bincount(row).argmax()
+
         correct_pred = np.equal(predictions, all_labels)
 
         return np.mean(correct_pred)
