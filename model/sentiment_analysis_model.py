@@ -91,8 +91,7 @@ class SentimentAnalysisModel(Model):
             except tf.errors.OutOfRangeError:
                 return ac_accuracy / ac_total
 
-    def monte_carlo_dropout_evaluate(self, sess, dataset):
-        num_samples = 10
+    def monte_carlo_samples(self, sess, dataset, num_samples):
         all_preds = np.zeros(shape=(self.config.num_validation, num_samples))
         all_labels = np.zeros(shape=(self.config.num_validation))
 
@@ -121,11 +120,26 @@ class SentimentAnalysisModel(Model):
             if self.verbose:
                 progbar.update(i + 1, [])
 
-        all_preds = all_preds.astype(dtype=np.int64)
-        predictions = np.zeros(shape=(self.config.num_validation))
+        return all_preds, all_labels
 
-        for index, row in enumerate(all_preds):
-            predictions[index] = np.bincount(row).argmax()
+    def monte_carlo_samples_count(self, all_preds):
+        mc_counts = []
+
+        all_preds = all_preds.astype(dtype=np.int64)
+
+        for row in all_preds:
+            bincount = np.bincount(row)
+            mc_counts.append((bincount, bincount.argmax()))
+
+        return mc_counts
+
+    def monte_carlo_dropout_evaluate(self, sess, dataset):
+        all_preds, all_labels = self.monte_carlo_samples(sess, dataset, num_samples=10)
+        mc_counts = self.monte_carlo_samples_count(all_preds)
+
+        predictions = np.zeros(shape=(self.config.num_validation))
+        for index, (bincount, value) in enumerate(mc_counts):
+            predictions[index] = value
 
         correct_pred = np.equal(predictions, all_labels)
 
