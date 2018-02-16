@@ -1,55 +1,14 @@
 import argparse
 import os
 
-import tensorflow as tf
+from model.model_manager import ModelManager
 
-from model.input_pipeline import InputPipeline
-from model.recurrent_model import RecurrentModel, RecurrentConfig
-from word_embedding.word_embedding import get_embedding
-from utils.tensorboard import create_unique_name
-from utils.graphs import accuracy_graph
 
 DEFAULT_BATCH_SIZE = 32
 DEFAULT_PERFORM_SHUFFLE = True
 DEFAULT_NUM_EPOCHS = 10000
 
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
-
-
-def create_dataset(user_args):
-    train_file = user_args['train_file']
-    validation_file = user_args['validation_file']
-    test_file = user_args['test_file']
-    batch_size = user_args['batch_size']
-    perform_shuffle = user_args['perform_shuffle']
-    bucket_width = user_args['bucket_width']
-    num_buckets = user_args['num_buckets']
-
-    input_pipeline = InputPipeline(
-        train_file, validation_file, test_file, batch_size, perform_shuffle,
-        bucket_width, num_buckets)
-    input_pipeline.build_pipeline()
-
-    return input_pipeline
-
-
-def initialize_tensorboard(user_args):
-    model_name = user_args['model_name']
-    tensorboard_save_name = create_unique_name(model_name)
-    tensorboard_dir = user_args['tensorboard_dir']
-
-    writer = tf.summary.FileWriter(
-        os.path.join(tensorboard_dir, tensorboard_save_name))
-
-    return writer, tensorboard_save_name
-
-
-def save_accuracy_graph(train_accuracies, val_accuracies, graphs_dir, save_name):
-    if not os.path.exists(graphs_dir):
-        os.makedirs(graphs_dir)
-
-    save_path = os.path.join(graphs_dir, save_name)
-    accuracy_graph(train_accuracies, val_accuracies, save_path)
 
 
 def bool_arguments(value):
@@ -213,58 +172,12 @@ def create_argument_parser():
     return parser
 
 
-def run_model(**user_args):
-    print('Creating dataset...')
-    input_pipeline = create_dataset(user_args)
-    print('Calculating number of batches...')
-    input_pipeline.get_datasets_num_batches()
-
-    print('Loading embedding file...')
-    embedding_file = user_args['embedding_file']
-    embed_size = user_args['embed_size']
-    embedding_pickle = user_args['embedding_pickle']
-    word_embedding = get_embedding(
-        embedding_file, embed_size, None, embedding_pickle)
-    _, embedding_matrix, _ = word_embedding.get_word_embedding()
-
-    print('Creating Recurrent model...')
-    recurrent_config = RecurrentConfig(user_args)
-    recurrent_model = RecurrentModel(recurrent_config, embedding_matrix)
-
-    saved_model_path = user_args['saved_model_folder']
-
-    with tf.Session() as sess:
-        writer, save_name = initialize_tensorboard(user_args)
-        writer.add_graph(sess.graph)
-
-        recurrent_model.prepare(sess, input_pipeline)
-
-        init = tf.global_variables_initializer()
-        sess.run(init)
-
-        try:
-            best_accuracy, train_accuracies, val_accuracies = recurrent_model.fit(
-                sess, input_pipeline, saved_model_path, writer)
-        except tf.errors.InvalidArgumentError:
-            print('Invalid set of arguments ... ')
-            best_accuracy = -1
-
-    save_graph = user_args['save_graph']
-
-    if save_graph:
-        graphs_dir = user_args['graphs_dir']
-        save_accuracy_graph(train_accuracies, val_accuracies, graphs_dir, save_name)
-
-    tf.reset_default_graph()
-
-    return best_accuracy
-
-
 def main():
     parser = create_argument_parser()
     user_args = vars(parser.parse_args())
 
-    return run_model(**user_args)
+    model_manager = ModelManager(user_args)
+    model_manager.run_model()
 
 
 if __name__ == '__main__':
