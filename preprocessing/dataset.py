@@ -24,6 +24,14 @@ def save(save_data, pkl_file):
         pickle.dump(save_data, f)
 
 
+def get_dataset(dataset_type):
+
+    if dataset_type == 'debug':
+        return DebugMovieReviewDataset
+
+    return MovieReviewDataset
+
+
 class MovieReviewDataset:
 
     def __init__(self, train_save_path, validation_save_path, test_save_path,
@@ -49,7 +57,7 @@ class MovieReviewDataset:
         self.test_reviews = None
         self.format_reviews = False
 
-        self.load_datasets()
+        self.save_formatted_reviews = True
 
     def load_datasets(self):
         if self.train_save_path and os.path.exists(self.train_save_path):
@@ -76,11 +84,8 @@ class MovieReviewDataset:
         print('Transforming {} reviews into tfrecords'.format(review_type))
         self.create_tfrecords(reviews, review_type)
 
-    def create_dataset(self):
-        if not self.train_reviews and not self.validation_reviews and not self.test_reviews:
-            self.format_reviews = True
-
-        self.make_dirs()
+    def get_reviews(self):
+        self.load_datasets()
 
         if not self.train_reviews:
             pos_train_reviews, neg_train_reviews = self.apply_data_preprocessing('train')
@@ -91,17 +96,26 @@ class MovieReviewDataset:
                 self.train_reviews, self.validation_reviews = self.create_validation_set(
                         self.train_reviews)
 
-                print('Saving train reviews ...')
-                save(self.train_reviews, self.train_save_path)
-                print('Saving validation reviews ...')
-                save(self.validation_reviews, self.validation_save_path)
+                if self.save_formatted_reviews:
+                    print('Saving train reviews ...')
+                    save(self.train_reviews, self.train_save_path)
+                    print('Saving validation reviews ...')
+                    save(self.validation_reviews, self.validation_save_path)
 
         if not self.test_reviews:
             pos_test_reviews, neg_test_reviews = self.apply_data_preprocessing('test')
             self.test_reviews = self.create_unified_dataset(pos_test_reviews, neg_test_reviews)
 
-            print('Saving test reviews ...')
-            save(self.test_reviews, self.test_save_path)
+            if self.save_formatted_reviews:
+                print('Saving test reviews ...')
+                save(self.test_reviews, self.test_save_path)
+
+    def create_dataset(self):
+        if not self.train_reviews and not self.validation_reviews and not self.test_reviews:
+            self.format_reviews = True
+
+        self.make_dirs()
+        self.get_reviews()
 
         vocab = self.get_vocabulary(self.train_reviews)
 
@@ -255,3 +269,21 @@ class MovieReviewDataset:
         test_path = os.path.join(self.output_dir, 'test')
         if not os.path.exists(test_path):
             os.makedirs(test_path)
+
+
+class DebugMovieReviewDataset(MovieReviewDataset):
+
+    def __init__(self, train_save_path, validation_save_path, test_save_path,
+                 data_dir, data_output_dir, output_dir, embedding_file, embed_size,
+                 embedding_path, embedding_wordindex_path, sentence_size=None):
+        super().__init__(train_save_path, validation_save_path, test_save_path, data_dir,
+                         data_output_dir, output_dir, embedding_file, embed_size,
+                         embedding_path, embedding_wordindex_path, sentence_size)
+        self.save_formatted_reviews = False
+
+    def get_reviews(self):
+        print('Creating DEBUG dataset')
+        super().get_reviews()
+
+        self.train_reviews = self.train_reviews[0:500]
+        self.validation_reviews = self.validation_reviews[0:100]

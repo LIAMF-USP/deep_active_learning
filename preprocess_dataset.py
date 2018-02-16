@@ -1,6 +1,6 @@
 import argparse
 
-from preprocessing.dataset import MovieReviewDataset
+from preprocessing.dataset import get_dataset
 
 
 def create_argument_parser():
@@ -15,6 +15,11 @@ def create_argument_parser():
                         '--data-output-dir',
                         type=str,
                         help='The output dir for the formatted dataset')
+
+    parser.add_argument('-dt',
+                        '--dataset-type',
+                        type=str,
+                        help='The type of dataset to be created (Full, Debug, Active Learning)')
 
     parser.add_argument('-trsp',
                         '--train-save-path',
@@ -85,7 +90,9 @@ def main():
     embedding_wordindex_path = user_args['embedding_wordindex_path']
     sentence_size = user_args['sentence_size']
 
-    movie_review_dataset = MovieReviewDataset(
+    dataset = get_dataset(user_args['dataset_type'])
+
+    movie_review_dataset = dataset(
         train_save_path=train_save_path,
         validation_save_path=validation_save_path,
         test_save_path=test_save_path,
