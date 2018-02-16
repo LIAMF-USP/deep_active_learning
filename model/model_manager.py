@@ -2,7 +2,7 @@ import os
 
 import tensorflow as tf
 
-from model.input_pipeline import InputPipeline
+from model.input_pipeline import InputPipeline, ALInputPipeline
 from model.recurrent_model import RecurrentModel, RecurrentConfig
 from word_embedding.word_embedding import get_embedding
 from utils.tensorboard import create_unique_name
@@ -79,8 +79,9 @@ class ModelManager:
             sess.run(init)
 
             try:
-                best_accuracy, train_accuracies, val_accuracies, test_accuracy = recurrent_model.fit(
-                    sess, input_pipeline, saved_model_path, writer)
+                (best_accuracy, train_accuracies,
+                 val_accuracies, test_accuracy) = recurrent_model.fit(sess, input_pipeline,
+                                                                      saved_model_path, writer)
             except tf.errors.InvalidArgumentError:
                 print('Invalid set of arguments ... ')
                 best_accuracy = -1
@@ -92,4 +93,22 @@ class ModelManager:
 
         tf.reset_default_graph()
 
-        return best_accuracy
+        return best_accuracy, train_accuracies, val_accuracies, test_accuracy
+
+
+class ActiveLearningModelManager(ModelManager):
+
+    def create_dataset(self):
+        train_data = self.model_params['train_data']
+        test_data = self.model_params['test_data']
+        batch_size = self.model_params['batch_size']
+        perform_shuffle = self.model_params['perform_shuffle']
+        bucket_width = self.model_params['bucket_width']
+        num_buckets = self.model_params['num_buckets']
+
+        input_pipeline = ALInputPipeline(
+            train_data, test_data, batch_size, perform_shuffle,
+            bucket_width, num_buckets)
+        input_pipeline.build_pipeline()
+
+        return input_pipeline

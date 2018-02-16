@@ -23,7 +23,7 @@ class Config:
         self.embed_size = user_args['embed_size']
         self.num_classes = user_args['num_classes']
         self.num_train = user_args['num_train']
-        self.num_validation = user_args['num_validation']
+        self.num_validation = user_args.get('num_validation', 0)
         self.num_test = user_args['num_test']
         self.use_test = user_args['use_test']
         self.model_name = user_args['model_name']
