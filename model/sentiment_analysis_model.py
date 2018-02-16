@@ -92,13 +92,14 @@ class SentimentAnalysisModel(Model):
             except tf.errors.OutOfRangeError:
                 return ac_accuracy / ac_total
 
-    def monte_carlo_samples(self, sess, dataset, num_samples):
+    def monte_carlo_samples(self, sess, iterator, num_samples):
         all_preds = np.zeros(shape=(self.config.num_validation, num_samples))
         all_labels = np.zeros(shape=(self.config.num_validation))
 
         for i in range(num_samples):
             batch_pos = 0
-            sess.run(dataset.validation_iterator)
+
+            sess.run(iterator)
 
             if self.verbose:
                 progbar = Progbar(target=num_samples)
@@ -134,11 +135,11 @@ class SentimentAnalysisModel(Model):
 
         return mc_counts
 
-    def monte_carlo_dropout_evaluate(self, sess, dataset):
+    def monte_carlo_dropout_evaluate(self, sess, dataset, num_data):
         all_preds, all_labels = self.monte_carlo_samples(sess, dataset, num_samples=10)
         mc_counts = self.monte_carlo_samples_count(all_preds)
 
-        predictions = np.zeros(shape=(self.config.num_validation))
+        predictions = np.zeros(shape=(num_data))
         for index, (bincount, value) in enumerate(mc_counts):
             predictions[index] = value
 
@@ -235,7 +236,9 @@ class SentimentAnalysisModel(Model):
                 sess.run(dataset.validation_iterator)
 
                 val_accuracy = self.evaluate(sess, total_batch)
-                mc_accuracy = self.monte_carlo_dropout_evaluate(sess, dataset)
+                num_data = self.config.num_validation
+                mc_accuracy = self.monte_carlo_dropout_evaluate(
+                    sess, dataset.validation_iterator, num_data)
 
                 val_accuracies.append(val_accuracy)
 
