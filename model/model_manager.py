@@ -79,7 +79,7 @@ class ModelManager:
             sess.run(init)
 
             try:
-                best_accuracy, train_accuracies, val_accuracies = recurrent_model.fit(
+                best_accuracy, train_accuracies, val_accuracies, test_accuracy = recurrent_model.fit(
                     sess, input_pipeline, saved_model_path, writer)
             except tf.errors.InvalidArgumentError:
                 print('Invalid set of arguments ... ')

@@ -43,6 +43,7 @@ GRAPHS_DIR='graphs'
 NUM_EPOCHS=10
 NUM_CLASSES=2
 
+USE_VALIDATION=1
 PERFORM_SHUFFLE=1
 SAVE_GRAPH=1
 USE_TEST=0
@@ -78,6 +79,7 @@ python base_model.py \
     --num-train=${NUM_TRAIN} \
     --num-validation=${NUM_VALIDATION} \
     --num-test=${NUM_TEST} \
+    --use-validation=${USE_VALIDATION} \
     --graphs-dir=${GRAPHS_DIR} \
     --model-name=${MODEL_NAME} \
     --tensorboard-dir=${TENSORBOARD_DIR} \

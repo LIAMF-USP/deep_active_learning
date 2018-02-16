@@ -56,6 +56,11 @@ def create_argument_parser():
                         type=int,
                         help='Number of test examples')
 
+    parser.add_argument('-uv',
+                        '--use-validation',
+                        type=bool_arguments,
+                        help='If the model should provide accuracy measurements using validation set')  # noqa
+
     parser.add_argument('-gd',
                         '--graphs-dir',
                         type=str,

@@ -27,6 +27,7 @@ class Config:
         self.num_test = user_args['num_test']
         self.use_test = user_args['use_test']
         self.model_name = user_args['model_name']
+        self.use_validation = user_args['use_validation']
 
 
 class SentimentAnalysisModel(Model):
@@ -225,33 +226,36 @@ class SentimentAnalysisModel(Model):
             total_batch = dataset.train_batches
             self.run_epoch(sess, dataset, writer, epoch, total_batch)
 
-            sess.run(dataset.train_iterator)
-            train_accuracy = self.evaluate(sess, total_batch)
+            if self.config.use_validation:
+                sess.run(dataset.train_iterator)
+                train_accuracy = self.evaluate(sess, total_batch)
+                train_accuracies.append(train_accuracy)
 
-            total_batch = dataset.validation_batches
-            sess.run(dataset.validation_iterator)
-            val_accuracy = self.evaluate(sess, total_batch)
+                total_batch = dataset.validation_batches
+                sess.run(dataset.validation_iterator)
 
-            mc_accuracy = self.monte_carlo_dropout_evaluate(sess, dataset)
+                val_accuracy = self.evaluate(sess, total_batch)
+                mc_accuracy = self.monte_carlo_dropout_evaluate(sess, dataset)
 
-            val_accuracies.append(val_accuracy)
-            train_accuracies.append(train_accuracy)
+                val_accuracies.append(val_accuracy)
 
-            if val_accuracy > best_accuracy:
-                best_accuracy = val_accuracy
-                self.saver.save(sess, saved_model_path)
+                if val_accuracy > best_accuracy:
+                    best_accuracy = val_accuracy
+                    self.saver.save(sess, saved_model_path)
 
-            print('Train Accuracy for epoch {}: {}'.format(epoch, train_accuracy))
-            print('Validation Accuracy for epoch {}: {}'.format(epoch, val_accuracy))
-            print('Validation Accuracy (MC Dropout) for epoch {}: {}'.format(epoch, mc_accuracy))
-            print()
+                print('Train Accuracy for epoch {}: {}'.format(epoch, train_accuracy))
+                print('Validation Accuracy for epoch {}: {}'.format(epoch, val_accuracy))
+                print('Validation Accuracy (MC Dropout) for epoch {}: {}'.format(
+                    epoch, mc_accuracy))
+                print()
 
             sess.run(dataset.train_iterator)
 
         add_array_to_summary_writer(writer, val_accuracies, 'val_accuracy')
         add_array_to_summary_writer(writer, train_accuracies, 'train_accuracy')
 
+        test_accuracy = -1
         if self.config.use_test:
-            self.run_test_accuracy(sess, dataset)
+            test_accuracy = self.run_test_accuracy(sess, dataset)
 
-        return best_accuracy, train_accuracies, val_accuracies
+        return best_accuracy, train_accuracies, val_accuracies, test_accuracy
