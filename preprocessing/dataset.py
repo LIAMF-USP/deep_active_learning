@@ -28,6 +28,8 @@ def get_dataset(dataset_type):
 
     if dataset_type == 'debug':
         return DebugMovieReviewDataset
+    elif dataset_type == 'active_learning':
+        return ActiveLearningDataset
 
     return MovieReviewDataset
 
@@ -58,6 +60,8 @@ class MovieReviewDataset:
         self.format_reviews = False
 
         self.save_formatted_reviews = True
+        self.should_load_datasets = True
+        self.create_validation_dataset = True
 
     def load_datasets(self):
         if self.train_save_path and os.path.exists(self.train_save_path):
@@ -81,24 +85,34 @@ class MovieReviewDataset:
         print('Transforming {} reviews into list of ids'.format(review_type))
         reviews = self.transform_sentences(reviews, word_index)
 
+        print('Saving {} formatted reviews using pickle'.format(review_type))
+        output_path = os.path.join(self.output_dir, review_type, '{}.pkl'.format(review_type))
+        save(reviews, output_path)
+
         print('Transforming {} reviews into tfrecords'.format(review_type))
         self.create_tfrecords(reviews, review_type)
 
+        print()
+
     def get_reviews(self):
-        self.load_datasets()
+        if self.should_load_datasets:
+            self.load_datasets()
 
         if not self.train_reviews:
             pos_train_reviews, neg_train_reviews = self.apply_data_preprocessing('train')
             self.train_reviews = self.create_unified_dataset(pos_train_reviews, neg_train_reviews)
 
-            if not self.validation_reviews:
-                print('Creating validation set')
-                self.train_reviews, self.validation_reviews = self.create_validation_set(
-                        self.train_reviews)
+            if self.validation_reviews:
+                print('Creating validation reviews')
+                if self.create_validation_dataset:
+                    self.train_reviews, self.validation_reviews = self.split_reviews(
+                            self.train_reviews)
 
-                if self.save_formatted_reviews:
-                    print('Saving train reviews ...')
-                    save(self.train_reviews, self.train_save_path)
+            if self.save_formatted_reviews:
+                print('Saving train reviews ...')
+                save(self.train_reviews, self.train_save_path)
+
+                if self.create_validation_dataset and self.validation_reviews:
                     print('Saving validation reviews ...')
                     save(self.validation_reviews, self.validation_save_path)
 
@@ -117,19 +131,15 @@ class MovieReviewDataset:
         self.make_dirs()
         self.get_reviews()
 
-        vocab = self.get_vocabulary(self.train_reviews)
+        vocab = self.get_vocabulary()
 
         embedding = self.load_embeddings(vocab)
         word_index, matrix, embedding_vocab = embedding.get_word_embedding()
 
         self.prepare_reviews(self.train_reviews, embedding, word_index, 'train')
-        print()
-
-        self.prepare_reviews(self.validation_reviews, embedding, word_index, 'val')
-        print()
-
+        if self.create_validation_dataset:
+            self.prepare_reviews(self.validation_reviews, embedding, word_index, 'val')
         self.prepare_reviews(self.test_reviews, embedding, word_index, 'test')
-        print()
 
     def create_tfrecords(self, reviews, dataset_type):
         output_path = os.path.join(self.output_dir, dataset_type,
@@ -160,14 +170,12 @@ class MovieReviewDataset:
             self.embedding_path,
             self.embedding_wordindex_path)
 
-    def get_vocabulary(self, train_reviews):
-        vocab = None
-
+    def get_vocabulary(self):
         print('Loading vocabulary...')
-        vocab = get_vocab(train_reviews)
+        vocab = get_vocab(self.train_reviews)
         return vocab
 
-    def create_validation_set(self, train_reviews, percent=0.1):
+    def split_reviews(self, train_reviews, percent=0.1):
         num_reviews = int(len(train_reviews) * percent)
 
         validation_reviews = train_reviews[0:num_reviews]
@@ -287,3 +295,15 @@ class DebugMovieReviewDataset(MovieReviewDataset):
 
         self.train_reviews = self.train_reviews[0:500]
         self.validation_reviews = self.validation_reviews[0:100]
+
+
+class ActiveLearningDataset(MovieReviewDataset):
+    def __init__(self, train_save_path, validation_save_path, test_save_path,
+                 data_dir, data_output_dir, output_dir, embedding_file, embed_size,
+                 embedding_path, embedding_wordindex_path, sentence_size=None):
+        super().__init__(train_save_path, validation_save_path, test_save_path, data_dir,
+                         data_output_dir, output_dir, embedding_file, embed_size,
+                         embedding_path, embedding_wordindex_path, sentence_size)
+        self.save_formatted_reviews = False
+        self.should_load_datasets = False
+        self.create_validation_dataset = False
