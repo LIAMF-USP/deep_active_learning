@@ -11,6 +11,7 @@ install:
   - pip3 install scipy
   - pip3 install -e git+https://github.com/facebookresearch/fastText#egg=version_pkg
   - pip3 install gensim
+  - pip3 install matplotlib
 script: 
   - ./scripts/run_tests.sh
   - flake8 .
