@@ -1,5 +1,6 @@
 import os
 
+import numpy as np
 import tensorflow as tf
 
 from model.input_pipeline import InputPipeline, ALInputPipeline
@@ -7,12 +8,14 @@ from model.recurrent_model import RecurrentModel, RecurrentConfig
 from word_embedding.word_embedding import get_embedding
 from utils.tensorboard import create_unique_name
 from utils.graphs import accuracy_graph
+from utils.metrics import variation_ratio
 
 
 class ModelManager:
 
     def __init__(self, model_params):
         self.model_params = model_params
+        self.sess = None
 
     def create_dataset(self):
         train_file = self.model_params['train_file']
@@ -51,9 +54,9 @@ class ModelManager:
 
     def run_model(self):
         print('Creating dataset...')
-        input_pipeline = self.create_dataset()
+        self.input_pipeline = self.create_dataset()
         print('Calculating number of batches...')
-        input_pipeline.get_datasets_num_batches()
+        self.input_pipeline.get_datasets_num_batches()
 
         print('Loading embedding file...')
         embedding_file = self.model_params['embedding_file']
@@ -65,41 +68,45 @@ class ModelManager:
 
         print('Creating Recurrent model...')
         recurrent_config = RecurrentConfig(self.model_params)
-        recurrent_model = RecurrentModel(recurrent_config, embedding_matrix)
+        self.recurrent_model = RecurrentModel(recurrent_config, embedding_matrix)
 
         saved_model_path = self.model_params['saved_model_folder']
 
-        with tf.Session() as sess:
-            writer = self.initialize_tensorboard()
-            writer.add_graph(sess.graph)
+        if not self.sess:
+            self.sess = tf.Session()
 
-            recurrent_model.prepare(sess, input_pipeline)
+        writer = self.initialize_tensorboard()
+        writer.add_graph(self.sess.graph)
 
-            init = tf.global_variables_initializer()
-            sess.run(init)
+        self.recurrent_model.prepare(self.sess, self.input_pipeline)
 
-            try:
-                (best_accuracy, train_accuracies,
-                 val_accuracies, test_accuracy) = recurrent_model.fit(sess, input_pipeline,
-                                                                      saved_model_path, writer)
-            except tf.errors.InvalidArgumentError:
-                print('Invalid set of arguments ... ')
-                best_accuracy = -1
+        init = tf.global_variables_initializer()
+        self.sess.run(init)
+
+        try:
+            (best_accuracy, train_accuracies,
+                val_accuracies, test_accuracy) = self.recurrent_model.fit(
+                    self.sess, self.input_pipeline, saved_model_path, writer)
+        except tf.errors.InvalidArgumentError:
+            print('Invalid set of arguments ... ')
+            best_accuracy = -1
 
         save_graph = self.model_params['save_graph']
 
         if save_graph:
             self.save_accuracy_graph(train_accuracies, val_accuracies)
 
-        tf.reset_default_graph()
-
         return best_accuracy, train_accuracies, val_accuracies, test_accuracy
+
+    def reset_graph(self):
+        tf.reset_default_graph()
 
 
 class ActiveLearningModelManager(ModelManager):
 
     def create_dataset(self):
         train_data = self.model_params['train_data']
+        validation_data = self.model_params['validation_data']
         test_data = self.model_params['test_data']
         batch_size = self.model_params['batch_size']
         perform_shuffle = self.model_params['perform_shuffle']
@@ -107,8 +114,16 @@ class ActiveLearningModelManager(ModelManager):
         num_buckets = self.model_params['num_buckets']
 
         input_pipeline = ALInputPipeline(
-            train_data, test_data, batch_size, perform_shuffle,
+            train_data, validation_data, test_data, batch_size, perform_shuffle,
             bucket_width, num_buckets)
         input_pipeline.build_pipeline()
 
         return input_pipeline
+
+    def unlabeled_uncertainty(self, num_samples=10):
+        all_preds, all_labels = self.recurrent_model.monte_carlo_samples(
+            self.sess, self.input_pipeline.validation_iterator, num_samples=10)
+        mc_counts = self.recurrent_model.monte_carlo_samples_count(all_preds)
+        variation_ratios = np.array(variation_ratio(mc_counts))
+
+        return variation_ratios

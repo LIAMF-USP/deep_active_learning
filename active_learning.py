@@ -233,12 +233,17 @@ def run_active_learning(**user_args):
         train_file, test_file)
 
     user_args['train_data'] = labeled_dataset
+    user_args['validation_data'] = unlabeled_dataset
+    user_args['num_validation'] = len(unlabeled_dataset[0])
     user_args['test_data'] = test_dataset
 
     al_model_manager = ActiveLearningModelManager(user_args)
     _, _, _, test_accuracy = al_model_manager.run_model()
 
-    print(test_accuracy)
+    print('Test accuracy for this round: {}'.format(test_accuracy))
+
+    unlabeled_uncertainty = al_model_manager.unlabeled_uncertainty()
+    print(unlabeled_uncertainty.shape)
 
 
 def main():
