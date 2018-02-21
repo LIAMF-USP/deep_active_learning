@@ -118,14 +118,14 @@ class InputPipeline:
     def test_iterator(self):
         return self._test_iterator_op
 
-    def create_datasets(self):
-        train_dataset = SentimentAnalysisDataset(
+    def create_datasets(self, dataset=SentimentAnalysisDataset):
+        train_dataset = dataset(
             self.train_files, self.batch_size, self.perform_shuffle,
             self.bucket_width, self.num_buckets)
-        validation_dataset = SentimentAnalysisDataset(
+        validation_dataset = dataset(
             self.validation_files, self.batch_size, False,
             self.bucket_width, self.num_buckets)
-        test_dataset = SentimentAnalysisDataset(
+        test_dataset = dataset(
             self.test_files, self.batch_size, False,
             self.bucket_width, self.num_buckets)
 
@@ -170,69 +170,7 @@ class InputPipeline:
         self.create_iterator()
 
 
-class ALInputPipeline:
+class ALInputPipeline(InputPipeline):
 
-    def __init__(self, labeled_data, test_data, batch_size, perform_shuffle,
-                 bucket_width, num_buckets):
-        self.labeled_data = labeled_data
-        self.test_data = test_data
-        self.batch_size = batch_size
-        self.perform_shuffle = perform_shuffle
-        self.bucket_width = bucket_width
-        self.num_buckets = num_buckets
-
-        self._train_iterator_op = None
-        self._test_iterator_op = None
-
-    @property
-    def train_iterator(self):
-        return self._train_iterator_op
-
-    @property
-    def test_iterator(self):
-        return self._test_iterator_op
-
-    def create_datasets(self):
-        train_dataset = NumpyDataset(
-            self.labeled_data, self.batch_size, self.perform_shuffle,
-            self.bucket_width, self.num_buckets)
-        test_dataset = NumpyDataset(
-            self.test_data, self.batch_size, False,
-            self.bucket_width, self.num_buckets)
-
-        self.train_dataset = train_dataset.create_dataset()
-        self.test_dataset = test_dataset.create_dataset()
-
-    def create_iterator(self):
-        self._iterator = tf.data.Iterator.from_structure(
-            self.train_dataset.output_types, self.train_dataset.output_shapes)
-
-        self._train_iterator_op = self._iterator.make_initializer(self.train_dataset)
-        self._test_iterator_op = self._iterator.make_initializer(self.test_dataset)
-
-    def make_batch(self):
-        tokens_batch, labels_batch, size_batch = self._iterator.get_next()
-
-        return tokens_batch, labels_batch, size_batch
-
-    def get_num_batches(self, iterator):
-        with tf.Session() as sess:
-            num_batches = 0
-            sess.run(iterator)
-
-            while True:
-                try:
-                    _, _, _ = sess.run(self.make_batch())
-                    num_batches += 1
-                except tf.errors.OutOfRangeError:
-                    break
-
-        return num_batches
-
-    def get_datasets_num_batches(self):
-        self.train_batches = self.get_num_batches(self.train_iterator)
-        self.test_batches = self.get_num_batches(self.test_iterator)
-
-    def build_pipeline(self):
-        self.create_datasets()
-        self.create_iterator()
+    def create_datasets(self, dataset=NumpyDataset):
+        super().create_datasets(dataset)
