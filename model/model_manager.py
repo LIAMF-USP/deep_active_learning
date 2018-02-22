@@ -72,8 +72,7 @@ class ModelManager:
 
         saved_model_path = self.model_params['saved_model_folder']
 
-        if not self.sess:
-            self.sess = tf.Session()
+        self.sess = tf.Session()
 
         writer = self.initialize_tensorboard()
         writer.add_graph(self.sess.graph)
@@ -99,6 +98,7 @@ class ModelManager:
         return best_accuracy, train_accuracies, val_accuracies, test_accuracy
 
     def reset_graph(self):
+        self.sess.close()
         tf.reset_default_graph()
 
 
