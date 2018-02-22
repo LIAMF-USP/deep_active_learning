@@ -2,7 +2,7 @@ import unittest
 
 import numpy as np
 
-from active_learning import get_index
+from model.model_manager import ActiveLearningModelManager
 
 
 class ActiveLearningTest(unittest.TestCase):
@@ -12,8 +12,10 @@ class ActiveLearningTest(unittest.TestCase):
         label = 0
         size = 2
 
+        al_model_manager = ActiveLearningModelManager(None, None)
+
         expected_indexes = [0, 2]
-        actual_indexes = get_index(train_labels, label, size)
+        actual_indexes = al_model_manager.get_index(train_labels, label, size)
 
         for index in expected_indexes:
             self.assertTrue(index in actual_indexes)

@@ -52,6 +52,7 @@ NUM_ROUNDS=10
 SAMPLE_SIZE=2000
 NUM_QUERIES=10
 NUM_PASSES=10
+INITIAL_TRAINING_SIZE=10
 
 python active_learning.py \
     --train-file=${AL_TRAIN_FILE} \
@@ -84,4 +85,5 @@ python active_learning.py \
     --num-rounds=${NUM_ROUNDS} \
     --sample-size=${SAMPLE_SIZE} \
     --num-queries=${NUM_QUERIES} \
-    --num-passes=${NUM_PASSES}
+    --num-passes=${NUM_PASSES} \
+    --initial-training-size=${INITIAL_TRAINING_SIZE}

@@ -1,11 +1,7 @@
 import argparse
 import os
-import random
-
-import numpy as np
 
 from model.model_manager import ActiveLearningModelManager
-from preprocessing.dataset import load
 
 
 DEFAULT_BATCH_SIZE = 32
@@ -13,61 +9,6 @@ DEFAULT_PERFORM_SHUFFLE = True
 DEFAULT_NUM_EPOCHS = 10000
 
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
-
-
-def get_index(train_labels, label, size):
-    # Initialize variable with a single 0
-    label_indexes = np.zeros(shape=(1), dtype=np.int64)
-
-    for index, review_label in enumerate(train_labels):
-        if review_label == label:
-            label_indexes = np.append(label_indexes, np.array([index], dtype=np.int64))
-
-    # Remove initialization variable
-    label_indexes = label_indexes[1:]
-    np.random.shuffle(label_indexes)
-
-    return label_indexes[:size]
-
-
-def create_initial_dataset(train_file, test_file, train_initial_size=10):
-    train_data = load(train_file)
-    test_data = load(test_file)
-
-    random.shuffle(train_data)
-
-    data_ids, data_labels, data_sizes = [], [], []
-    test_ids, test_labels, test_sizes = [], [], []
-
-    for word_ids, label, size in train_data:
-        data_ids.append(word_ids)
-        data_labels.append(label)
-        data_sizes.append(size)
-
-    for word_ids, label, size in test_data:
-        test_ids.append(word_ids)
-        test_labels.append(label)
-        test_sizes.append(size)
-
-    train_ids = np.array(data_ids[:30])
-    train_labels = np.array(data_labels[:30])
-    train_sizes = np.array(data_sizes[:30])
-
-    unlabeled_ids = np.array(data_ids[30:])
-    unlabeled_labels = np.array(data_labels[30:])
-    unlabeled_sizes = np.array(data_sizes[30:])
-
-    size = int(train_initial_size / 2)
-    negative_samples = get_index(train_labels, 0, size)
-    positive_samples = get_index(train_labels, 1, size)
-    train_indexes = np.concatenate([negative_samples, positive_samples])
-
-    labeled_dataset = (train_ids[train_indexes], train_labels[train_indexes],
-                       train_sizes[train_indexes])
-    unlabeled_dataset = (unlabeled_ids, unlabeled_labels, unlabeled_sizes)
-    test_dataset = (test_ids, test_labels, test_sizes)
-
-    return labeled_dataset, unlabeled_dataset, test_dataset
 
 
 def bool_arguments(value):
@@ -242,94 +183,56 @@ def create_argument_parser():
                         type=int,
                         help='Number of forward passes for Monte Carlo Dropout')
 
+    parser.add_argument('-its',
+                        '--initial-training-size',
+                        type=int,
+                        help='Initial size of the training set')
+
     return parser
 
 
 def run_active_learning(**user_args):
-    train_file = user_args['train_file']
-    test_file = user_args['test_file']
+    active_learning_params = {
+        'train_file': user_args['train_file'],
+        'test_file': user_args['test_file'],
+        'num_rounds': user_args['num_rounds'],
+        'sample_size': user_args['sample_size'],
+        'num_queries': user_args['num_queries'],
+        'num_passes': user_args['num_passes'],
+        'train_initial_size': user_args['initial_training_size']
+    }
 
-    labeled_dataset, unlabeled_dataset, test_dataset = create_initial_dataset(
-        train_file, test_file)
+    model_params = {
+        'embedding_file': user_args['embedding_file'],
+        'embed_size': user_args['embed_size'],
+        'embedding_pickle': user_args['embedding_pickle'],
+        'saved_model_folder': user_args['saved_model_folder'],
+        'perform_shuffle': user_args['perform_shuffle'],
+        'model_name': user_args['model_name'],
+        'tensorboard_dir': user_args['tensorboard_dir'],
+        'graphs_dir': user_args['graphs_dir'],
+        'save_graph': user_args['save_graph'],
+        'learning_rate': user_args['learning_rate'],
+        'batch_size': user_args['batch_size'],
+        'num_epochs': user_args['num_epochs'],
+        'num_classes': user_args['num_classes'],
+        'num_train': user_args['num_train'],
+        'num_test': user_args['num_test'],
+        'use_test': user_args['use_test'],
+        'use_validation': user_args['use_validation'],
+        'num_units': user_args['num_units'],
+        'recurrent_output_dropout': user_args['recurrent_output_dropout'],
+        'recurrent_state_dropout': user_args['recurrent_state_dropout'],
+        'embedding_dropout': user_args['embedding_dropout'],
+        'weight_decay': user_args['weight_decay'],
+        'clip_gradients': user_args['clip_gradients'],
+        'max_norm': user_args['max_norm'],
+        'bucket_width': user_args['bucket_width'],
+        'num_buckets': user_args['num_buckets']
+    }
 
-    unlabeled_dataset_word_id = unlabeled_dataset[0]
-    unlabeled_dataset_labels = unlabeled_dataset[1]
-    unlabeled_dataset_sizes = unlabeled_dataset[2]
-
-    num_rounds = user_args['num_rounds']
-    sample_size = user_args['sample_size']
-    test_accuracies, train_data_sizes = [], []
-    num_queries = user_args['num_queries']
-    num_passes = user_args['num_passes']
-
-    for i in range(num_rounds):
-
-        unlabeled_pool_indexes = np.array(
-            random.sample(range(0, unlabeled_dataset_word_id.shape[0]), sample_size)
-        )
-
-        pool_unlabeled_ids = unlabeled_dataset_word_id[unlabeled_pool_indexes]
-        pool_unlabeled_labels = unlabeled_dataset_labels[unlabeled_pool_indexes]
-        pool_unlabeled_sizes = unlabeled_dataset_sizes[unlabeled_pool_indexes]
-
-        pool_unlabeled_dataset = (pool_unlabeled_ids, pool_unlabeled_labels,
-                                  pool_unlabeled_sizes)
-
-        user_args['train_data'] = labeled_dataset
-        user_args['validation_data'] = pool_unlabeled_dataset
-        user_args['num_validation'] = len(pool_unlabeled_dataset[0])
-        user_args['test_data'] = test_dataset
-
-        al_model_manager = ActiveLearningModelManager(user_args)
-        _, _, _, test_accuracy = al_model_manager.run_model()
-
-        print('Test accuracy for this round: {}'.format(test_accuracy))
-        test_accuracies.append(test_accuracy)
-
-        unlabeled_uncertainty = al_model_manager.unlabeled_uncertainty(num_passes)
-        new_samples = unlabeled_uncertainty.argsort()[-num_queries:][::-1]
-        al_model_manager.reset_graph()
-
-        pooled_word_id = pool_unlabeled_ids[new_samples]
-        pooled_labels = pool_unlabeled_labels[new_samples]
-        pooled_sizes = pool_unlabeled_sizes[new_samples]
-
-        labeled_word_id = labeled_dataset[0]
-        labeled_labels = labeled_dataset[1]
-        labeled_sizes = labeled_dataset[2]
-        train_data_sizes.append(len(labeled_word_id))
-
-        labeled_word_id = np.concatenate([labeled_word_id, pooled_word_id], axis=0)
-        labeled_labels = np.concatenate([labeled_labels, pooled_labels], axis=0)
-        labeled_sizes = np.concatenate([labeled_sizes, pooled_sizes], axis=0)
-
-        labeled_dataset = (labeled_word_id, labeled_labels, labeled_sizes)
-
-        delete_unlabeled_word_id_sample = np.delete(
-            pool_unlabeled_ids, (new_samples), axis=0)
-        delete_unlabeled_labels_sample = np.delete(
-            pool_unlabeled_labels, (new_samples), axis=0)
-        delete_unlabeled_sizes_sample = np.delete(
-            pool_unlabeled_sizes, (new_samples), axis=0)
-
-        delete_unlabeled_word_id = np.delete(
-            unlabeled_dataset_word_id, (unlabeled_pool_indexes), axis=0)
-        delete_unlabeled_labels = np.delete(
-            unlabeled_dataset_labels, (unlabeled_pool_indexes), axis=0)
-        delete_unlabeled_sizes = np.delete(
-            unlabeled_dataset_sizes, (unlabeled_pool_indexes), axis=0)
-
-        unlabeled_dataset_word_id = np.concatenate(
-            [delete_unlabeled_word_id, delete_unlabeled_word_id_sample], axis=0)
-        unlabeled_dataset_labels = np.concatenate(
-            [delete_unlabeled_labels, delete_unlabeled_labels_sample], axis=0)
-        unlabeled_dataset_sizes = np.concatenate(
-            [delete_unlabeled_sizes, delete_unlabeled_sizes_sample], axis=0)
-
-        print('End of round {}'.format(i))
-        print('Size of pool {}'.format(unlabeled_dataset_word_id.shape[0]))
-        print('Train data size: {}'.format(len(labeled_word_id)))
-        print()
+    al_model_manager = ActiveLearningModelManager(model_params, active_learning_params)
+    al_model_manager.run_cycle()
 
 
 def main():
