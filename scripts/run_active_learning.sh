@@ -22,12 +22,12 @@ GLOVE_EMBED_SIZE=100
 
 GRAPHS_DIR='graphs'
 
-NUM_EPOCHS=10
+NUM_EPOCHS=50
 NUM_CLASSES=2
 
 USE_VALIDATION=0
 PERFORM_SHUFFLE=1
-SAVE_GRAPH=1
+SAVE_GRAPH=0
 USE_TEST=1
 
 #Bucket paramets
@@ -46,6 +46,12 @@ CLIP_GRADIENTS=0
 MAX_NORM=5
 
 EMBED_SIZE="$GLOVE_EMBED_SIZE"
+
+#Active Learning parameters
+NUM_ROUNDS=10
+SAMPLE_SIZE=2000
+NUM_QUERIES=10
+NUM_PASSES=10
 
 python active_learning.py \
     --train-file=${AL_TRAIN_FILE} \
@@ -74,4 +80,8 @@ python active_learning.py \
     --bucket-width=${BUCKET_WIDTH} \
     --num-buckets=${NUM_BUCKETS} \
     --use-test=${USE_TEST} \
-    --save-graph=${SAVE_GRAPH}
+    --save-graph=${SAVE_GRAPH} \
+    --num-rounds=${NUM_ROUNDS} \
+    --sample-size=${SAMPLE_SIZE} \
+    --num-queries=${NUM_QUERIES} \
+    --num-passes=${NUM_PASSES}

@@ -222,6 +222,26 @@ def create_argument_parser():
                         type=bool_arguments,
                         help='Define if an accuracy graph should be saved')
 
+    parser.add_argument('-nr',
+                        '--num-rounds',
+                        type=int,
+                        help='Number of Active Learning cycles to run')
+
+    parser.add_argument('-sz',
+                        '--sample-size',
+                        type=int,
+                        help='The size of samples to evaluate in the unlabeled dataset')
+
+    parser.add_argument('-nq',
+                        '--num-queries',
+                        type=int,
+                        help='The number of data to be extracted from the unlabeled sample')
+
+    parser.add_argument('-nfp',
+                        '--num-passes',
+                        type=int,
+                        help='Number of forward passes for Monte Carlo Dropout')
+
     return parser
 
 
@@ -236,10 +256,11 @@ def run_active_learning(**user_args):
     unlabeled_dataset_labels = unlabeled_dataset[1]
     unlabeled_dataset_sizes = unlabeled_dataset[2]
 
-    num_rounds = 10
-    sample_size = 2000
+    num_rounds = user_args['num_rounds']
+    sample_size = user_args['sample_size']
     test_accuracies, train_data_sizes = [], []
-    num_queries = 10
+    num_queries = user_args['num_queries']
+    num_passes = user_args['num_passes']
 
     for i in range(num_rounds):
 
@@ -261,15 +282,13 @@ def run_active_learning(**user_args):
 
         al_model_manager = ActiveLearningModelManager(user_args)
         _, _, _, test_accuracy = al_model_manager.run_model()
-        al_model_manager.reset_graph()
 
         print('Test accuracy for this round: {}'.format(test_accuracy))
         test_accuracies.append(test_accuracy)
 
-        unlabeled_uncertainty = al_model_manager.unlabeled_uncertainty()
-        print(unlabeled_uncertainty.shape)
-
+        unlabeled_uncertainty = al_model_manager.unlabeled_uncertainty(num_passes)
         new_samples = unlabeled_uncertainty.argsort()[-num_queries:][::-1]
+        al_model_manager.reset_graph()
 
         pooled_word_id = pool_unlabeled_ids[new_samples]
         pooled_labels = pool_unlabeled_labels[new_samples]
