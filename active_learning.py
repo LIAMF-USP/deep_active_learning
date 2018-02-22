@@ -232,18 +232,85 @@ def run_active_learning(**user_args):
     labeled_dataset, unlabeled_dataset, test_dataset = create_initial_dataset(
         train_file, test_file)
 
-    user_args['train_data'] = labeled_dataset
-    user_args['validation_data'] = unlabeled_dataset
-    user_args['num_validation'] = len(unlabeled_dataset[0])
-    user_args['test_data'] = test_dataset
+    unlabeled_dataset_word_id = unlabeled_dataset[0]
+    unlabeled_dataset_labels = unlabeled_dataset[1]
+    unlabeled_dataset_sizes = unlabeled_dataset[2]
 
-    al_model_manager = ActiveLearningModelManager(user_args)
-    _, _, _, test_accuracy = al_model_manager.run_model()
+    num_rounds = 10
+    sample_size = 2000
+    test_accuracies, train_data_sizes = [], []
+    num_queries = 10
 
-    print('Test accuracy for this round: {}'.format(test_accuracy))
+    for i in range(num_rounds):
 
-    unlabeled_uncertainty = al_model_manager.unlabeled_uncertainty()
-    print(unlabeled_uncertainty.shape)
+        unlabeled_pool_indexes = np.array(
+            random.sample(range(0, unlabeled_dataset_word_id.shape[0]), sample_size)
+        )
+
+        pool_unlabeled_ids = unlabeled_dataset_word_id[unlabeled_pool_indexes]
+        pool_unlabeled_labels = unlabeled_dataset_labels[unlabeled_pool_indexes]
+        pool_unlabeled_sizes = unlabeled_dataset_sizes[unlabeled_pool_indexes]
+
+        pool_unlabeled_dataset = (pool_unlabeled_ids, pool_unlabeled_labels,
+                                  pool_unlabeled_sizes)
+
+        user_args['train_data'] = labeled_dataset
+        user_args['validation_data'] = pool_unlabeled_dataset
+        user_args['num_validation'] = len(pool_unlabeled_dataset[0])
+        user_args['test_data'] = test_dataset
+
+        al_model_manager = ActiveLearningModelManager(user_args)
+        _, _, _, test_accuracy = al_model_manager.run_model()
+        al_model_manager.reset_graph()
+
+        print('Test accuracy for this round: {}'.format(test_accuracy))
+        test_accuracies.append(test_accuracy)
+
+        unlabeled_uncertainty = al_model_manager.unlabeled_uncertainty()
+        print(unlabeled_uncertainty.shape)
+
+        new_samples = unlabeled_uncertainty.argsort()[-num_queries:][::-1]
+
+        pooled_word_id = pool_unlabeled_ids[new_samples]
+        pooled_labels = pool_unlabeled_labels[new_samples]
+        pooled_sizes = pool_unlabeled_sizes[new_samples]
+
+        labeled_word_id = labeled_dataset[0]
+        labeled_labels = labeled_dataset[1]
+        labeled_sizes = labeled_dataset[2]
+        train_data_sizes.append(len(labeled_word_id))
+
+        labeled_word_id = np.concatenate([labeled_word_id, pooled_word_id], axis=0)
+        labeled_labels = np.concatenate([labeled_labels, pooled_labels], axis=0)
+        labeled_sizes = np.concatenate([labeled_sizes, pooled_sizes], axis=0)
+
+        labeled_dataset = (labeled_word_id, labeled_labels, labeled_sizes)
+
+        delete_unlabeled_word_id_sample = np.delete(
+            pool_unlabeled_ids, (new_samples), axis=0)
+        delete_unlabeled_labels_sample = np.delete(
+            pool_unlabeled_labels, (new_samples), axis=0)
+        delete_unlabeled_sizes_sample = np.delete(
+            pool_unlabeled_sizes, (new_samples), axis=0)
+
+        delete_unlabeled_word_id = np.delete(
+            unlabeled_dataset_word_id, (unlabeled_pool_indexes), axis=0)
+        delete_unlabeled_labels = np.delete(
+            unlabeled_dataset_labels, (unlabeled_pool_indexes), axis=0)
+        delete_unlabeled_sizes = np.delete(
+            unlabeled_dataset_sizes, (unlabeled_pool_indexes), axis=0)
+
+        unlabeled_dataset_word_id = np.concatenate(
+            [delete_unlabeled_word_id, delete_unlabeled_word_id_sample], axis=0)
+        unlabeled_dataset_labels = np.concatenate(
+            [delete_unlabeled_labels, delete_unlabeled_labels_sample], axis=0)
+        unlabeled_dataset_sizes = np.concatenate(
+            [delete_unlabeled_sizes, delete_unlabeled_sizes_sample], axis=0)
+
+        print('End of round {}'.format(i))
+        print('Size of pool {}'.format(unlabeled_dataset_word_id.shape[0]))
+        print('Train data size: {}'.format(len(labeled_word_id)))
+        print()
 
 
 def main():
