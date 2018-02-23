@@ -2,6 +2,7 @@ import argparse
 import os
 
 from model.model_manager import ActiveLearningModelManager
+from utils.graphs import active_learning_graph
 
 
 DEFAULT_BATCH_SIZE = 32
@@ -188,6 +189,11 @@ def create_argument_parser():
                         type=int,
                         help='Initial size of the training set')
 
+    parser.add_argument('-sgp',
+                        '--save-graph-path',
+                        type=str,
+                        help='Save graph path')
+
     return parser
 
 
@@ -220,6 +226,7 @@ def run_active_learning(**user_args):
         'num_test': user_args['num_test'],
         'use_test': user_args['use_test'],
         'use_validation': user_args['use_validation'],
+        'use_mc_dropout': False,
         'num_units': user_args['num_units'],
         'recurrent_output_dropout': user_args['recurrent_output_dropout'],
         'recurrent_state_dropout': user_args['recurrent_state_dropout'],
@@ -232,7 +239,10 @@ def run_active_learning(**user_args):
     }
 
     al_model_manager = ActiveLearningModelManager(model_params, active_learning_params)
-    al_model_manager.run_cycle()
+    train_data, test_accuracies = al_model_manager.run_cycle()
+
+    save_graph_path = user_args['save_graph_path']
+    active_learning_graph(train_data, test_accuracies, save_graph_path)
 
 
 def main():

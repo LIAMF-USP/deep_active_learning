@@ -308,3 +308,5 @@ class ActiveLearningModelManager(ModelManager):
             print('Size of pool {}'.format(self.unlabeled_dataset_word_id.shape[0]))
             print('Train data size: {}'.format(len(labeled_word_id)))
             print()
+
+        return train_data_sizes, test_accuracies

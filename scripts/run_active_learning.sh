@@ -53,6 +53,7 @@ SAMPLE_SIZE=2000
 NUM_QUERIES=10
 NUM_PASSES=10
 INITIAL_TRAINING_SIZE=10
+SAVE_GRAPH_PATH=$GRAPHS_DIR'/al_var_ratio.png'
 
 python active_learning.py \
     --train-file=${AL_TRAIN_FILE} \
@@ -86,4 +87,5 @@ python active_learning.py \
     --sample-size=${SAMPLE_SIZE} \
     --num-queries=${NUM_QUERIES} \
     --num-passes=${NUM_PASSES} \
-    --initial-training-size=${INITIAL_TRAINING_SIZE}
+    --initial-training-size=${INITIAL_TRAINING_SIZE} \
+    --save-graph-path=${SAVE_GRAPH_PATH}
