@@ -90,7 +90,8 @@ class ModelManager:
                     self.sess, self.input_pipeline, saved_model_path, writer)
         except tf.errors.InvalidArgumentError:
             print('Invalid set of arguments ... ')
-            best_accuracy = -1
+            train_accuracies, val_accuracies = [], []
+            best_accuracy, test_accuracy = -1, -1
 
         save_graph = self.model_params['save_graph']
 
