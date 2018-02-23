@@ -40,10 +40,11 @@ WORD2VEC_EMBED_SIZE=300
 
 GRAPHS_DIR='graphs'
 
-NUM_EPOCHS=10
+NUM_EPOCHS=100
 NUM_CLASSES=2
 
 USE_VALIDATION=1
+USE_MC_DROPOUT=0
 PERFORM_SHUFFLE=1
 SAVE_GRAPH=1
 USE_TEST=0
@@ -80,6 +81,7 @@ python base_model.py \
     --num-validation=${NUM_VALIDATION} \
     --num-test=${NUM_TEST} \
     --use-validation=${USE_VALIDATION} \
+    --use-mc-dropout=${USE_MC_DROPOUT} \
     --graphs-dir=${GRAPHS_DIR} \
     --model-name=${MODEL_NAME} \
     --tensorboard-dir=${TENSORBOARD_DIR} \

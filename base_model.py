@@ -61,6 +61,11 @@ def create_argument_parser():
                         type=bool_arguments,
                         help='If the model should provide accuracy measurements using validation set')  # noqa
 
+    parser.add_argument('-umd',
+                        '--use-mc-dropout',
+                        type=bool_arguments,
+                        help='If we will evaluate the model using MC Dropout')
+
     parser.add_argument('-gd',
                         '--graphs-dir',
                         type=str,

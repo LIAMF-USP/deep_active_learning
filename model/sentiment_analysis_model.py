@@ -28,6 +28,7 @@ class Config:
         self.use_test = user_args['use_test']
         self.model_name = user_args['model_name']
         self.use_validation = user_args['use_validation']
+        self.use_mc_dropout = user_args['use_mc_dropout']
 
 
 class SentimentAnalysisModel(Model):
@@ -237,8 +238,10 @@ class SentimentAnalysisModel(Model):
 
                 val_accuracy = self.evaluate(sess, total_batch)
                 num_data = self.config.num_validation
-                mc_accuracy = self.monte_carlo_dropout_evaluate(
-                    sess, dataset.validation_iterator, num_data)
+
+                if self.config.use_mc_dropout:
+                    mc_accuracy = self.monte_carlo_dropout_evaluate(
+                        sess, dataset.validation_iterator, num_data)
 
                 val_accuracies.append(val_accuracy)
 
@@ -248,8 +251,11 @@ class SentimentAnalysisModel(Model):
 
                 print('Train Accuracy for epoch {}: {}'.format(epoch, train_accuracy))
                 print('Validation Accuracy for epoch {}: {}'.format(epoch, val_accuracy))
-                print('Validation Accuracy (MC Dropout) for epoch {}: {}'.format(
-                    epoch, mc_accuracy))
+
+                if self.config.use_mc_dropout:
+                    print('Validation Accuracy (MC Dropout) for epoch {}: {}'.format(
+                        epoch, mc_accuracy))
+
                 print()
 
             sess.run(dataset.train_iterator)
