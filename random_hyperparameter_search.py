@@ -1,3 +1,4 @@
+import os
 import argparse
 import random
 
@@ -7,7 +8,9 @@ import tensorflow as tf
 from collections import namedtuple
 from pathlib import Path
 
-from base_model import run_model
+from model.model_manager import ModelManager
+
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
 WordEmbedding = namedtuple(
     'WordEmbedding',
@@ -24,7 +27,6 @@ GloVe = WordEmbedding(
     embedding_pickle='data/glove/glove.pkl',
     embed_size=100
 )
-
 
 FastText = WordEmbedding(
     name='FastText',
@@ -54,7 +56,7 @@ word_embeddings = {
 }
 
 BATCH_SIZES = [32, 64, 128]
-NUM_EPOCHS = [4, 8, 10, 12, 14, 16, 18, 20]
+NUM_EPOCHS = [4, 8, 10, 12, 14, 16, 18, 20, 30, 40]
 
 
 class RandomParameterSearch:
@@ -65,6 +67,9 @@ class RandomParameterSearch:
         self.num_train = 22500
         self.num_validation = 2500
         self.num_test = 25000
+
+        self.use_validation = True
+        self.use_mc_dropout = False
 
         self.tensorboard_dir = 'tensorboard_logs'
         self.graphs_dir = 'graphs'
@@ -104,7 +109,7 @@ class RandomParameterSearch:
     def get_num_units(self, min_value=128, max_value=1024):
         return int(self.geometric_draw(min_value, max_value))
 
-    def get_weight_decay(self, min_value=3.1e-7, max_value=3.1e-5):
+    def get_weight_decay(self, min_value=3.1e-5, max_value=1e-3):
         return self.exponential_draw(min_value, max_value)
 
     def sample_parameters(self):
@@ -156,6 +161,7 @@ class RandomParameterSearch:
     def find_best_parameters(self, save_path, save_graph=False, verbose=True):
         best_accuracy = -1
         best_model = None
+        model_manager = ModelManager(None)
 
         for sample in range(self.num_samples):
             self.sample_parameters()
@@ -163,36 +169,42 @@ class RandomParameterSearch:
             if verbose:
                 print('Evaluating model:\n{}'.format(self.model_name))
             try:
-                accuracy = run_model(
-                    train_file=self.train_file,
-                    validation_file=self.validation_file,
-                    test_file=self.test_file,
-                    saved_model_folder=self.saved_model_folder,
-                    num_train=self.num_train,
-                    num_validation=self.num_validation,
-                    num_test=self.num_test,
-                    graphs_dir=self.graphs_dir,
-                    model_name=self.model_name,
-                    tensorboard_dir=self.tensorboard_dir,
-                    embedding_file=self.embedding_file,
-                    embedding_pickle=self.embedding_pickle,
-                    learning_rate=self.learning_rate,
-                    batch_size=self.batch_size,
-                    num_epochs=self.num_epochs,
-                    perform_shuffle=self.perform_shuffle,
-                    embed_size=self.embed_size,
-                    num_units=self.num_units,
-                    num_classes=self.num_classes,
-                    recurrent_output_dropout=self.recurrent_output_dropout,
-                    recurrent_state_dropout=self.recurrent_state_dropout,
-                    embedding_dropout=self.embedding_dropout,
-                    clip_gradients=self.clip_gradients,
-                    max_norm=self.max_norm,
-                    weight_decay=self.weight_decay,
-                    bucket_width=self.bucket_width,
-                    num_buckets=self.num_buckets,
-                    use_test=self.use_test,
-                    save_graph=self.save_graph)
+                model_params = {
+                    'train_file': self.train_file,
+                    'validation_file': self.validation_file,
+                    'test_file': self.test_file,
+                    'saved_model_folder': self.saved_model_folder,
+                    'num_train': self.num_train,
+                    'num_validation': self.num_validation,
+                    'num_test': self.num_test,
+                    'use_validation': self.use_validation,
+                    'use_mc_dropout': self.use_mc_dropout,
+                    'graphs_dir': self.graphs_dir,
+                    'model_name': self.model_name,
+                    'tensorboard_dir': self.tensorboard_dir,
+                    'embedding_file': self.embedding_file,
+                    'embedding_pickle': self.embedding_pickle,
+                    'learning_rate': self.learning_rate,
+                    'batch_size': self.batch_size,
+                    'num_epochs': self.num_epochs,
+                    'perform_shuffle': self.perform_shuffle,
+                    'embed_size': self.embed_size,
+                    'num_units': self.num_units,
+                    'num_classes': self.num_classes,
+                    'recurrent_output_dropout': self.recurrent_output_dropout,
+                    'recurrent_state_dropout': self.recurrent_state_dropout,
+                    'embedding_dropout': self.embedding_dropout,
+                    'clip_gradients': self.clip_gradients,
+                    'max_norm': self.max_norm,
+                    'weight_decay': self.weight_decay,
+                    'bucket_width': self.bucket_width,
+                    'num_buckets': self.num_buckets,
+                    'use_test': self.use_test,
+                    'save_graph': self.save_graph
+                }
+                model_manager.model_params = model_params
+                accuracy, _, _, _ = model_manager.run_model()
+                model_manager.reset_graph()
 
                 if accuracy > best_accuracy:
                     best_accuracy = accuracy
