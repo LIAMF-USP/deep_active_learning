@@ -212,9 +212,11 @@ class RandomParameterSearch:
 
             except tf.errors.InvalidArgumentError as e:
                 print('Error running model: {}'.format(str(e)))
+                model_manager.reset_graph()
                 continue
             except tf.errors.ResourceExhaustedError as e:
                 print('Error running model: {}'.format(str(e)))
+                model_manager.reset_graph()
                 continue
 
         if verbose:
