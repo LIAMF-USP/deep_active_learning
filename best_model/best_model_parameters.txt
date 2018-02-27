@@ -1,0 +1,11 @@
+Embedding:FastText,lr:0.00214,out_drop:0.905,var_drop:0.331,emb_drop:0.759,batch:32,epoch:16,units:161,decay:0.0000713144
+Embedding:FastText
+lr:0.00214
+out_drop:0.905
+var_drop:0.331
+emb_drop:0.759
+batch:32
+epoch:16
+units:161
+decay:0.0000713144
+accuracy: 0.894
