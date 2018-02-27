@@ -1,5 +1,4 @@
 import os
-import pickle
 import random
 
 from preprocessing.format_dataset import (remove_html_from_text, remove_url_from_text,
@@ -8,20 +7,11 @@ from preprocessing.format_dataset import (remove_html_from_text, remove_url_from
                                           sentence_to_id_list, SentenceTFRecord, get_vocab)
 from word_embedding.word_embedding import get_embedding
 from utils.progress_bar import Progbar
+from utils.pickle import load, save
 
 
 POS_LABEL = 0
 NEG_LABEL = 1
-
-
-def load(pkl_file):
-    with open(pkl_file, 'rb') as f:
-        return pickle.load(f)
-
-
-def save(save_data, pkl_file):
-    with open(pkl_file, 'wb') as f:
-        pickle.dump(save_data, f)
 
 
 def get_dataset(dataset_type):
