@@ -16,13 +16,13 @@ NUM_TEST=25000
 MODEL_NAME='base_model'
 TENSORBOARD_DIR='tensorboard_logs'
 
-GLOVE_EMBEDDING_FILE="data/glove/glove.6B.100d.txt"
-GLOVE_EMBEDDING_PICKLE="data/active_learning/glove.pkl"
-GLOVE_EMBED_SIZE=100
+FASTTEXT_EMBEDDING_FILE="data/fasttext/wiki.en.vec"
+FASTTEXT_EMBEDDING_PICKLE="data/fasttext/fasttext.pkl"
+FASTTEXT_EMBED_SIZE=300
 
 GRAPHS_DIR='graphs'
 
-NUM_EPOCHS=50
+NUM_EPOCHS=16
 NUM_CLASSES=2
 
 USE_VALIDATION=0
@@ -35,25 +35,26 @@ BUCKET_WIDTH=30
 NUM_BUCKETS=30
 
 #Hyper-parameters
-LEARNING_RATE=0.001
-BATCH_SIZE=128
-NUM_UNITS=128
-RECURRENT_OUTPUT_DROPOUT=0.5
-RECURRENT_STATE_DROPOUT=0.5
-EMBEDDING_DROPOUT=0.5
-WEIGHT_DECAY=0.000001
+LEARNING_RATE=0.00214
+BATCH_SIZE=32
+NUM_UNITS=161
+RECURRENT_OUTPUT_DROPOUT=0.905
+RECURRENT_STATE_DROPOUT=0.331
+EMBEDDING_DROPOUT=0.759
+WEIGHT_DECAY=0.0000713144
 CLIP_GRADIENTS=0
 MAX_NORM=5
 
 EMBED_SIZE="$GLOVE_EMBED_SIZE"
 
 #Active Learning parameters
-NUM_ROUNDS=10
+NUM_ROUNDS=20000
 SAMPLE_SIZE=2000
 NUM_QUERIES=10
-NUM_PASSES=10
+NUM_PASSES=100
 INITIAL_TRAINING_SIZE=10
 SAVE_GRAPH_PATH=$GRAPHS_DIR'/al_var_ratio.png'
+SAVE_DATA_FOLDER='data/active_learning'
 
 python active_learning.py \
     --train-file=${AL_TRAIN_FILE} \
@@ -64,13 +65,13 @@ python active_learning.py \
     --graphs-dir=${GRAPHS_DIR} \
     --model-name=${MODEL_NAME} \
     --tensorboard-dir=${TENSORBOARD_DIR} \
-    --embedding-file=${GLOVE_EMBEDDING_FILE} \
-    --embedding-pickle=${GLOVE_EMBEDDING_PICKLE} \
+    --embedding-file=${FASTTEXT_EMBEDDING_FILE} \
+    --embedding-pickle=${FASTTEXT_EMBEDDING_PICKLE} \
     --learning-rate=${LEARNING_RATE} \
     --batch-size=${BATCH_SIZE} \
     --num-epochs=${NUM_EPOCHS} \
     --perform-shuffle=${PERFORM_SHUFFLE} \
-    --embed-size=${GLOVE_EMBED_SIZE} \
+    --embed-size=${FASTTEXT_EMBED_SIZE} \
     --num-units=${NUM_UNITS} \
     --num-classes=${NUM_CLASSES} \
     --recurrent-output-dropout=${RECURRENT_OUTPUT_DROPOUT} \
@@ -88,4 +89,5 @@ python active_learning.py \
     --num-queries=${NUM_QUERIES} \
     --num-passes=${NUM_PASSES} \
     --initial-training-size=${INITIAL_TRAINING_SIZE} \
-    --save-graph-path=${SAVE_GRAPH_PATH}
+    --save-graph-path=${SAVE_GRAPH_PATH} \
+    --save-data-folder=${SAVE_DATA_FOLDER}

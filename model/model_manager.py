@@ -186,7 +186,7 @@ class ActiveLearningModelManager(ModelManager):
 
     def unlabeled_uncertainty(self, num_samples=10):
         all_preds, all_labels = self.recurrent_model.monte_carlo_samples(
-            self.sess, self.input_pipeline.validation_iterator, num_samples=10)
+            self.sess, self.input_pipeline.validation_iterator, num_samples=num_samples)
         mc_counts = self.recurrent_model.monte_carlo_samples_count(all_preds)
         variation_ratios = np.array(variation_ratio(mc_counts))
 
