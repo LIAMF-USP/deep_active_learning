@@ -6,7 +6,7 @@ set -e
 #./script/run_active_learning.sh
 
 AL_TRAIN_FILE="data/active_learning/aclImdb_formatted/train/train.pkl"
-AL_TEST_FILE="data/glove/aclImdb_formatted/test/test.pkl"
+AL_TEST_FILE="data/active_learning/aclImdb_formatted/test/test.pkl"
 
 SAVED_MODEL_FOLDER="saved_models"
 
@@ -48,10 +48,10 @@ MAX_NORM=5
 EMBED_SIZE="$GLOVE_EMBED_SIZE"
 
 #Active Learning parameters
-NUM_ROUNDS=20000
+NUM_ROUNDS=118
 SAMPLE_SIZE=2000
-NUM_QUERIES=10
-NUM_PASSES=100
+NUM_QUERIES=50
+NUM_PASSES=50
 INITIAL_TRAINING_SIZE=10
 SAVE_GRAPH_PATH=$GRAPHS_DIR'/al_var_ratio.png'
 SAVE_DATA_FOLDER='data/active_learning'
