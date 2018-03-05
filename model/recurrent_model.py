@@ -31,14 +31,15 @@ class RecurrentModel(SentimentAnalysisModel):
         self.embedding_dropout_placeholder = tf.placeholder(tf.float32)
 
         self.data_placeholder = tf.placeholder(
-            tf.int32, shape=[None, 1000], name='data_placeholder')
+            tf.int32, shape=[None, 500], name='data_placeholder')
         self.sizes_placeholder = tf.placeholder(
             tf.int32, shape=[None], name='sizes_placeholder')
         self.labels_placeholder = tf.placeholder(
             tf.int32, shape=[None], name='labels_placeholder')
 
     def create_feed_dict(self, recurrent_output_dropout=None, recurrent_state_dropout=None,
-                         embedding_dropout=None):
+                         embedding_dropout=None, data_placeholder=None, sizes_placeholder=None,
+                         labels_placeholder=None):
         if recurrent_output_dropout is None:
             recurrent_output_dropout = self.config.recurrent_output_dropout
 
@@ -51,6 +52,15 @@ class RecurrentModel(SentimentAnalysisModel):
         feed_dict = {self.recurrent_output_dropout_placeholder: recurrent_output_dropout,
                      self.recurrent_state_dropout_placeholder: recurrent_state_dropout,
                      self.embedding_dropout_placeholder: embedding_dropout}
+
+        if data_placeholder is not None:
+            feed_dict[self.data_placeholder] = data_placeholder
+
+        if sizes_placeholder is not None:
+            feed_dict[self.sizes_placeholder] = sizes_placeholder
+
+        if labels_placeholder is not None:
+            feed_dict[self.labels_placeholder] = labels_placeholder
 
         return feed_dict
 

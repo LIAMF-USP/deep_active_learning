@@ -6,6 +6,7 @@ import tensorflow as tf
 
 from model.input_pipeline import InputPipeline, ALInputPipeline
 from model.recurrent_model import RecurrentModel, RecurrentConfig
+from model.monte_carlo_evaluation import MonteCarloEvaluation
 from word_embedding.word_embedding import get_embedding
 from utils.graphs import accuracy_graph
 from utils.metrics import variation_ratio
@@ -162,6 +163,7 @@ class ActiveLearningModelManager(ModelManager):
         negative_samples = self.get_index(train_labels, 0, size)
         positive_samples = self.get_index(train_labels, 1, size)
         train_indexes = np.concatenate([negative_samples, positive_samples])
+        np.random.shuffle(train_indexes)
 
         labeled_dataset = (train_ids[train_indexes], train_labels[train_indexes],
                            train_sizes[train_indexes])
@@ -170,52 +172,54 @@ class ActiveLearningModelManager(ModelManager):
 
         return labeled_dataset, unlabeled_dataset, test_dataset
 
-    def unlabeled_uncertainty(self, num_samples=10):
-        all_preds, all_labels = self.recurrent_model.monte_carlo_samples(
-            self.sess, self.input_pipeline.validation_iterator, num_samples=num_samples)
-        mc_counts = self.recurrent_model.monte_carlo_samples_count(all_preds)
+    def unlabeled_uncertainty(self, pool_unlabeled_ids, pool_unlabeled_sizes, num_samples=10):
+        monte_carlo_evaluation = MonteCarloEvaluation(self.sess, self.recurrent_model, True)
+
+        all_preds = monte_carlo_evaluation.prediction_samples(
+            pool_unlabeled_ids, pool_unlabeled_sizes, num_samples=num_samples)
+        mc_counts = monte_carlo_evaluation.monte_carlo_samples_count(all_preds)
         variation_ratios = np.array(variation_ratio(mc_counts))
 
         return variation_ratios
 
     def select_samples(self):
         sample_size = self.active_learning_params['sample_size']
-        unlabeled_pool_indexes = np.array(
-            random.sample(range(0, self.unlabeled_dataset_word_id.shape[0]), sample_size)
+        pool_indexes = np.array(
+            random.sample(range(0, self.unlabeled_dataset_id.shape[0]), sample_size)
         )
 
-        pool_unlabeled_ids = self.unlabeled_dataset_word_id[unlabeled_pool_indexes]
-        pool_unlabeled_labels = self.unlabeled_dataset_labels[unlabeled_pool_indexes]
-        pool_unlabeled_sizes = self.unlabeled_dataset_sizes[unlabeled_pool_indexes]
+        pool_ids = self.unlabeled_dataset_id[pool_indexes]
+        pool_labels = self.unlabeled_dataset_labels[pool_indexes]
+        pool_sizes = self.unlabeled_dataset_sizes[pool_indexes]
 
-        return (pool_unlabeled_ids, pool_unlabeled_labels, pool_unlabeled_sizes,
-                unlabeled_pool_indexes)
+        return (pool_ids, pool_labels, pool_sizes, pool_indexes)
 
-    def select_new_examples(self, pool_unlabeled_ids, pool_unlabeled_labels,
-                            pool_unlabeled_sizes):
+    def select_new_examples(self, pool_ids, pool_labels, pool_sizes):
+
         num_passes = self.active_learning_params['num_passes']
         num_queries = self.active_learning_params['num_queries']
 
-        unlabeled_uncertainty = self.unlabeled_uncertainty(num_passes)
+        unlabeled_uncertainty = self.unlabeled_uncertainty(pool_ids, pool_sizes, num_passes)
         new_samples = unlabeled_uncertainty.argsort()[-num_queries:][::-1]
+        np.random.shuffle(new_samples)
         self.reset_graph()
 
-        pooled_word_id = pool_unlabeled_ids[new_samples]
-        pooled_labels = pool_unlabeled_labels[new_samples]
-        pooled_sizes = pool_unlabeled_sizes[new_samples]
+        pooled_id = pool_ids[new_samples]
+        pooled_labels = pool_labels[new_samples]
+        pooled_sizes = pool_sizes[new_samples]
 
-        return pooled_word_id, pooled_labels, pooled_sizes, new_samples
+        return pooled_id, pooled_labels, pooled_sizes, new_samples
 
-    def update_labeled_dataset(self, pooled_word_id, pooled_labels, pooled_sizes):
-        labeled_word_id = self.labeled_dataset[0]
+    def update_labeled_dataset(self, pooled_id, pooled_labels, pooled_sizes):
+        labeled_id = self.labeled_dataset[0]
         labeled_labels = self.labeled_dataset[1]
         labeled_sizes = self.labeled_dataset[2]
 
-        labeled_word_id = np.concatenate([labeled_word_id, pooled_word_id], axis=0)
+        labeled_id = np.concatenate([labeled_id, pooled_id], axis=0)
         labeled_labels = np.concatenate([labeled_labels, pooled_labels], axis=0)
         labeled_sizes = np.concatenate([labeled_sizes, pooled_sizes], axis=0)
 
-        return labeled_word_id, labeled_labels, labeled_sizes
+        return labeled_id, labeled_labels, labeled_sizes
 
     def remove_data_from_dataset(self, ids, labels, sizes, data_index):
         deleted_ids = np.delete(ids, (data_index), axis=0)
@@ -224,21 +228,18 @@ class ActiveLearningModelManager(ModelManager):
 
         return deleted_ids, deleted_labels, deleted_sizes
 
-    def update_unlabeled_dataset(self, delete_unlabeled_word_id, delete_unlabeled_word_id_sample,
-                                 delete_unlabeled_labels, delete_unlabeled_labels_sample,
-                                 delete_unlabeled_sizes, delete_unlabeled_sizes_sample):
-        self.unlabeled_dataset_word_id = np.concatenate(
-            [delete_unlabeled_word_id, delete_unlabeled_word_id_sample], axis=0)
-        self.unlabeled_dataset_labels = np.concatenate(
-            [delete_unlabeled_labels, delete_unlabeled_labels_sample], axis=0)
-        self.unlabeled_dataset_sizes = np.concatenate(
-            [delete_unlabeled_sizes, delete_unlabeled_sizes_sample], axis=0)
+    def update_unlabeled_dataset(self, delete_id, delete_id_sample, delete_labels,
+                                 delete_labels_sample, delete_sizes, delete_sizes_sample):
+        self.unlabeled_dataset_id = np.concatenate([delete_id, delete_id_sample], axis=0)
+        self.unlabeled_dataset_labels = np.concatenate([delete_labels, delete_labels_sample],
+                                                       axis=0)
+        self.unlabeled_dataset_sizes = np.concatenate([delete_sizes, delete_sizes_sample], axis=0)
 
     def run_cycle(self):
         (self.labeled_dataset, unlabeled_dataset,
          test_dataset) = self.create_initial_dataset()
 
-        self.unlabeled_dataset_word_id = unlabeled_dataset[0]
+        self.unlabeled_dataset_id = unlabeled_dataset[0]
         self.unlabeled_dataset_labels = unlabeled_dataset[1]
         self.unlabeled_dataset_sizes = unlabeled_dataset[2]
 
@@ -249,51 +250,44 @@ class ActiveLearningModelManager(ModelManager):
         for i in range(self.active_learning_params['num_rounds']):
             print('Starting round {}'.format(i))
 
-            (pool_unlabeled_ids, pool_unlabeled_labels,
-             pool_unlabeled_sizes, unlabeled_pool_indexes) = self.select_samples()
-
-            pool_unlabeled_dataset = (pool_unlabeled_ids, pool_unlabeled_labels,
-                                      pool_unlabeled_sizes)
-
+            pool_ids, pool_labels, pool_sizes, pool_indexes = self.select_samples()
+            pool_dataset = (pool_ids, pool_labels, pool_sizes)
             self.model_params['train_data'] = self.labeled_dataset
-            self.model_params['validation_data'] = pool_unlabeled_dataset
+            self.model_params['validation_data'] = pool_dataset
 
             _, _, _, test_accuracy = self.run_model()
-
             test_accuracies.append(test_accuracy)
 
-            pooled_word_id, pooled_labels, pooled_sizes, sample_index = self.select_new_examples(
-                pool_unlabeled_ids, pool_unlabeled_labels, pool_unlabeled_sizes)
+            sample_id, sample_labels, sample_sizes, sample_index = self.select_new_examples(
+                pool_ids, pool_labels, pool_sizes)
             train_data_sizes.append(len(self.labeled_dataset[0]))
 
-            labeled_word_id, labeled_labels, labeled_sizes = self.update_labeled_dataset(
-                pooled_word_id, pooled_labels, pooled_sizes)
-            self.labeled_dataset = (labeled_word_id, labeled_labels, labeled_sizes)
+            labeled_id, labeled_labels, labeled_sizes = self.update_labeled_dataset(
+                sample_id, sample_labels, sample_sizes)
+            self.labeled_dataset = (labeled_id, labeled_labels, labeled_sizes)
 
-            (delete_unlabeled_word_id_sample, delete_unlabeled_labels_sample,
-             delete_unlabeled_sizes_sample) = self.remove_data_from_dataset(
-                    pool_unlabeled_ids, pool_unlabeled_labels, pool_unlabeled_sizes, sample_index)
+            (delete_id_sample, delete_labels_sample,
+             delete_sizes_sample) = self.remove_data_from_dataset(pool_ids, pool_labels,
+                                                                  pool_sizes, sample_index)
 
-            (delete_unlabeled_word_id, delete_unlabeled_labels,
-             delete_unlabeled_sizes) = self.remove_data_from_dataset(
-                self.unlabeled_dataset_word_id, self.unlabeled_dataset_labels,
-                self.unlabeled_dataset_sizes, unlabeled_pool_indexes)
+            delete_id, delete_labels, delete_sizes = self.remove_data_from_dataset(
+                self.unlabeled_dataset_id, self.unlabeled_dataset_labels,
+                self.unlabeled_dataset_sizes, pool_indexes)
 
-            self.unlabeled_dataset_word_id = np.concatenate(
-                [delete_unlabeled_word_id, delete_unlabeled_word_id_sample], axis=0)
+            self.unlabeled_dataset_id = np.concatenate([delete_id, delete_id_sample], axis=0)
             self.unlabeled_dataset_labels = np.concatenate(
-                [delete_unlabeled_labels, delete_unlabeled_labels_sample], axis=0)
+                [delete_labels, delete_labels_sample], axis=0)
             self.unlabeled_dataset_sizes = np.concatenate(
-                [delete_unlabeled_sizes, delete_unlabeled_sizes_sample], axis=0)
+                [delete_sizes, delete_sizes_sample], axis=0)
 
             self.update_unlabeled_dataset(
-                delete_unlabeled_word_id, delete_unlabeled_word_id_sample,
-                delete_unlabeled_labels, delete_unlabeled_labels_sample,
-                delete_unlabeled_sizes, delete_unlabeled_sizes_sample)
+                delete_id, delete_id_sample,
+                delete_labels, delete_labels_sample,
+                delete_sizes, delete_sizes_sample)
 
             print('End of round {}'.format(i))
-            print('Size of pool {}'.format(self.unlabeled_dataset_word_id.shape[0]))
-            print('Train data size: {}'.format(len(labeled_word_id)))
+            print('Size of pool {}'.format(self.unlabeled_dataset_id.shape[0]))
+            print('Train data size: {}'.format(len(labeled_id)))
             print()
 
         return train_data_sizes, test_accuracies

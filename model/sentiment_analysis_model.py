@@ -1,6 +1,5 @@
 import os
 
-import numpy as np
 import tensorflow as tf
 
 from model.model import Model
@@ -83,61 +82,6 @@ class SentimentAnalysisModel(Model):
 
             except tf.errors.OutOfRangeError:
                 return ac_accuracy / ac_total
-
-    def monte_carlo_samples(self, sess, iterator, num_samples):
-        all_preds = np.zeros(shape=(self.config.num_validation, num_samples))
-        all_labels = np.zeros(shape=(self.config.num_validation))
-
-        for i in range(num_samples):
-            batch_pos = 0
-
-            sess.run(iterator)
-
-            if self.verbose:
-                progbar = Progbar(target=num_samples)
-
-            while True:
-                try:
-                    feed = self.create_feed_dict()
-                    preds, labels = sess.run([self.pred, self.labels], feed_dict=feed)
-
-                    preds = np.argmax(preds, axis=1)
-
-                    batch_aux = batch_pos + preds.shape[0]
-                    all_preds[batch_pos:batch_aux, i] = preds
-                    all_labels[batch_pos:batch_aux] = labels
-
-                    batch_pos = batch_aux
-                except tf.errors.OutOfRangeError:
-                    break
-
-            if self.verbose:
-                progbar.update(i + 1, [])
-
-        return all_preds, all_labels
-
-    def monte_carlo_samples_count(self, all_preds):
-        mc_counts = []
-
-        all_preds = all_preds.astype(dtype=np.int64)
-
-        for row in all_preds:
-            bincount = np.bincount(row)
-            mc_counts.append((bincount, bincount.argmax()))
-
-        return mc_counts
-
-    def monte_carlo_dropout_evaluate(self, sess, dataset, num_data):
-        all_preds, all_labels = self.monte_carlo_samples(sess, dataset, num_samples=10)
-        mc_counts = self.monte_carlo_samples_count(all_preds)
-
-        predictions = np.zeros(shape=(num_data))
-        for index, (bincount, value) in enumerate(mc_counts):
-            predictions[index] = value
-
-        correct_pred = np.equal(predictions, all_labels)
-
-        return np.mean(correct_pred)
 
     def run_epoch(self, sess, dataset, epoch, total_batch):
         if self.verbose:
@@ -224,11 +168,6 @@ class SentimentAnalysisModel(Model):
                 val_accuracy = self.evaluate(sess, total_batch,
                                              self.validation_acc, self.validation_acc_size)
 
-                if self.config.use_mc_dropout:
-                    num_data = self.config.num_validation
-                    mc_accuracy = self.monte_carlo_dropout_evaluate(
-                        sess, dataset.validation_iterator, num_data)
-
                 val_accuracies.append(val_accuracy)
 
                 if val_accuracy > best_accuracy:
@@ -237,11 +176,6 @@ class SentimentAnalysisModel(Model):
 
                 print('Train Accuracy for epoch {}: {}'.format(epoch, train_accuracy))
                 print('Validation Accuracy for epoch {}: {}'.format(epoch, val_accuracy))
-
-                if self.config.use_mc_dropout:
-                    print('Validation Accuracy (MC Dropout) for epoch {}: {}'.format(
-                        epoch, mc_accuracy))
-
                 print()
 
         test_accuracy = -1
