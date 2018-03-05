@@ -22,13 +22,14 @@ class InputPipelineTests(tf.test.TestCase):
         input_pipeline.build_pipeline()
 
         with self.test_session():
-            input_pipeline.train_iterator.run()
+            train_iterator = input_pipeline.train_iterator
+            train_iterator.initializer.run()
             num_batches = 0
             expected_num_batches = 25
 
             while True:
                 try:
-                    tokens, labels, _ = input_pipeline.make_batch()
+                    tokens, labels, _ = train_iterator.get_next()
                     tokens.eval()
 
                     num_batches += 1
@@ -37,13 +38,14 @@ class InputPipelineTests(tf.test.TestCase):
 
             self.assertEqual(num_batches, expected_num_batches)
 
-            input_pipeline.validation_iterator.run()
+            validation_iterator = input_pipeline.validation_iterator
+            validation_iterator.initializer.run()
             num_batches = 0
             expected_num_batches = 6
 
             while True:
                 try:
-                    tokens, labels, _ = input_pipeline.make_batch()
+                    tokens, labels, _ = validation_iterator.get_next()
                     tokens.eval()
 
                     num_batches += 1
@@ -52,13 +54,14 @@ class InputPipelineTests(tf.test.TestCase):
 
             self.assertEqual(num_batches, expected_num_batches)
 
-            input_pipeline.test_iterator.run()
+            test_iterator = input_pipeline.test_iterator
+            test_iterator.initializer.run()
             num_batches = 0
             expected_num_batches = 7
 
             while True:
                 try:
-                    tokens, labels, _ = input_pipeline.make_batch()
+                    tokens, labels, _ = test_iterator.get_next()
                     tokens.eval()
 
                     num_batches += 1
@@ -67,13 +70,13 @@ class InputPipelineTests(tf.test.TestCase):
 
             self.assertEqual(num_batches, expected_num_batches)
 
-            input_pipeline.train_iterator.run()
+            train_iterator.initializer.run()
             num_batches = 0
             expected_num_batches = 25
 
             while True:
                 try:
-                    tokens, labels, _ = input_pipeline.make_batch()
+                    tokens, labels, _ = train_iterator.get_next()
                     tokens.eval()
 
                     num_batches += 1

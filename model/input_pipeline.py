@@ -134,26 +134,18 @@ class InputPipeline:
         self.test_dataset = test_dataset.create_dataset()
 
     def create_iterator(self):
-        self._iterator = tf.data.Iterator.from_structure(
-            self.train_dataset.output_types, self.train_dataset.output_shapes)
-
-        self._train_iterator_op = self._iterator.make_initializer(self.train_dataset)
-        self._validation_iterator_op = self._iterator.make_initializer(self.validation_dataset)
-        self._test_iterator_op = self._iterator.make_initializer(self.test_dataset)
-
-    def make_batch(self):
-        tokens_batch, labels_batch, size_batch = self._iterator.get_next()
-
-        return tokens_batch, labels_batch, size_batch
+        self._train_iterator_op = self.train_dataset.make_initializable_iterator()
+        self._validation_iterator_op = self.validation_dataset.make_initializable_iterator()
+        self._test_iterator_op = self.test_dataset.make_initializable_iterator()
 
     def get_num_batches(self, iterator):
         with tf.Session() as sess:
             num_batches = 0
-            sess.run(iterator)
+            sess.run(iterator.initializer)
 
             while True:
                 try:
-                    _, _, _ = sess.run(self.make_batch())
+                    _, _, _ = sess.run(iterator.get_next())
                     num_batches += 1
                 except tf.errors.OutOfRangeError:
                     break

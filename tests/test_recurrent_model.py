@@ -15,8 +15,8 @@ class RecurrentModelTest(tf.test.TestCase):
                       [7, 8, 9],
                       [10, 11, 12]]
 
-        Config = namedtuple('Config', ['num_units', 'num_classes'])
-        config = Config(3, 2)
+        Config = namedtuple('Config', ['num_units', 'num_classes', 'embed_size'])
+        config = Config(3, 2, 3)
 
         recurrent_model = RecurrentModel(config, embeddings)
         recurrent_model.add_placeholder()
@@ -65,8 +65,7 @@ class RecurrentModelTest(tf.test.TestCase):
 
         recurrent_model = RecurrentModel(config, embeddings)
         recurrent_model.add_placeholder()
-        recurrent_model.pred = batch_prediction
-        recurrent_model.add_evaluation_op(batch_labels)
+        acc, size = recurrent_model.add_evaluation_op(batch_prediction, batch_labels)
 
         expected_accuracy = 4.0
         expected_size = 5
@@ -75,7 +74,8 @@ class RecurrentModelTest(tf.test.TestCase):
             init = tf.global_variables_initializer()
             init.run()
 
-            actual_accuracy, actual_size = recurrent_model.batch_evaluate(sess)
+            actual_accuracy, actual_size = recurrent_model.batch_evaluate(
+                sess, acc, size)
 
             self.assertEqual(expected_size, actual_size)
             self.assertAlmostEqual(expected_accuracy, actual_accuracy)

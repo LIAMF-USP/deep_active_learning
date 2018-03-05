@@ -30,6 +30,13 @@ class RecurrentModel(SentimentAnalysisModel):
         self.recurrent_state_dropout_placeholder = tf.placeholder(tf.float32)
         self.embedding_dropout_placeholder = tf.placeholder(tf.float32)
 
+        self.data_placeholder = tf.placeholder(
+            tf.int32, shape=[None, 1000], name='data_placeholder')
+        self.sizes_placeholder = tf.placeholder(
+            tf.int32, shape=[None], name='sizes_placeholder')
+        self.labels_placeholder = tf.placeholder(
+            tf.int32, shape=[None], name='labels_placeholder')
+
     def create_feed_dict(self, recurrent_output_dropout=None, recurrent_state_dropout=None,
                          embedding_dropout=None):
         if recurrent_output_dropout is None:
@@ -53,60 +60,65 @@ class RecurrentModel(SentimentAnalysisModel):
         """
 
         with tf.name_scope('embeddings'):
-            base_embeddings = tf.Variable(self.pretrained_embeddings, dtype=tf.float32)
+            vocab_size = len(self.pretrained_embeddings)
+            base_embeddings = tf.get_variable(
+                'embeddings',
+                shape=(vocab_size, self.config.embed_size),
+                initializer=tf.constant_initializer(self.pretrained_embeddings),
+                dtype=tf.float32)
             embeddings_dropout = tf.nn.dropout(base_embeddings, self.embedding_dropout_placeholder)
             inputs = tf.nn.embedding_lookup(embeddings_dropout, inputs)
 
         return inputs
 
-    def add_prediction_op(self, inputs, size):
-        num_units = self.config.num_units
-        num_classes = self.config.num_classes
+    def get_logits(self, inputs, size, reuse=False):
+        with tf.variable_scope('logits', reuse=reuse):
+            num_units = self.config.num_units
+            num_classes = self.config.num_classes
 
-        x_hat = self.add_embedding(inputs)
+            x_hat = self.add_embedding(inputs)
 
-        with tf.name_scope('recurrent_layer'):
-            cell = tf.nn.rnn_cell.LSTMCell(num_units)
+            with tf.name_scope('recurrent_layer'):
+                cell = tf.nn.rnn_cell.LSTMCell(num_units)
 
-            drop_recurrent_cell = tf.nn.rnn_cell.DropoutWrapper(
-                    cell,
-                    output_keep_prob=self.recurrent_output_dropout_placeholder,
-                    state_keep_prob=self.recurrent_state_dropout_placeholder,
-                    variational_recurrent=True,
-                    input_size=self.config.embed_size,
+                drop_recurrent_cell = tf.nn.rnn_cell.DropoutWrapper(
+                        cell,
+                        output_keep_prob=self.recurrent_output_dropout_placeholder,
+                        state_keep_prob=self.recurrent_state_dropout_placeholder,
+                        variational_recurrent=True,
+                        input_size=self.config.embed_size,
+                        dtype=tf.float32)
+
+                """
+                The dynamic_rnn outputs a 0 for every output after it has reached
+                the end of a sentence. When doing sequence classification,
+                we need the last relevant value from the outputs matrix.
+                """
+                _, state = tf.nn.dynamic_rnn(drop_recurrent_cell, x_hat,
+                                             sequence_length=size,
+                                             dtype=tf.float32)
+
+                """
+                This variable will have shape [batch_size, num_units]
+                """
+                recurrent_output = state.h
+
+            with tf.name_scope('output_layer'):
+                initializer = tf.contrib.layers.xavier_initializer()
+                weight = tf.get_variable(
+                    'output_weights',
+                    shape=[num_units, num_classes],
+                    initializer=initializer,
+                    dtype=tf.float32)
+                bias = tf.get_variable(
+                    'output_bias',
+                    shape=[num_classes],
+                    initializer=initializer,
                     dtype=tf.float32)
 
-            """
-            The dynamic_rnn outputs a 0 for every output after it has reached
-            the end of a sentence. When doing sequence classification,
-            we need the last relevant value from the outputs matrix.
-            """
-            _, state = tf.nn.dynamic_rnn(drop_recurrent_cell, x_hat,
-                                         sequence_length=size,
-                                         dtype=tf.float32)
+                prediction = tf.matmul(recurrent_output, weight) + bias
 
-            """
-            This variable will have shape [batch_size, num_units]
-            """
-            recurrent_output = state.h
-            tf.summary.histogram('recurrent_output', recurrent_output)
-
-        with tf.name_scope('output_layer'):
-            initializer = tf.contrib.layers.xavier_initializer()
-            weight = tf.Variable(
-                initializer(shape=[num_units, num_classes]),
-                name='weight')
-            bias = tf.Variable(
-                initializer(shape=[num_classes]),
-                name='bias')
-
-            prediction = tf.matmul(recurrent_output, weight) + bias
-
-            tf.summary.histogram('output_weight', weight)
-            tf.summary.histogram('output_bias', bias)
-            tf.summary.histogram('prediction', prediction)
-
-        return prediction
+            return prediction
 
     def add_loss_op(self, pred, labels):
         with tf.name_scope('loss'):
@@ -120,8 +132,6 @@ class RecurrentModel(SentimentAnalysisModel):
                 [tf.nn.l2_loss(v) for v in tf.trainable_variables()])
 
             loss = cross_entropy + l2_loss
-
-            tf.summary.scalar('loss', loss)
 
         return loss
 
@@ -138,18 +148,19 @@ class RecurrentModel(SentimentAnalysisModel):
 
             return train_op
 
-    def add_evaluation_op(self, labels):
+    def add_evaluation_op(self, logits, labels):
         with tf.name_scope('validation'):
-            predictions = tf.cast(tf.argmax(self.pred, axis=1), tf.int32)
+            predictions = tf.cast(tf.argmax(logits, axis=1), tf.int32)
             size = tf.cast(tf.shape(predictions)[0], tf.float32)
             correct_pred = tf.equal(predictions, tf.cast(labels, tf.int32))
 
-            self._accuracy = tf.reduce_mean(tf.cast(correct_pred, tf.float32)) * size
-            self._size = size
+            accuracy = tf.reduce_mean(tf.cast(correct_pred, tf.float32)) * size
 
-    def batch_evaluate(self, sess):
+            return accuracy, size
+
+    def batch_evaluate(self, sess, accuracy, size):
         feed = self.create_feed_dict(recurrent_output_dropout=1.0, recurrent_state_dropout=1.0,
                                      embedding_dropout=1.0)
-        accuracy, total = sess.run([self._accuracy, self._size], feed_dict=feed)
+        accuracy, total = sess.run([accuracy, size], feed_dict=feed)
 
         return accuracy, total

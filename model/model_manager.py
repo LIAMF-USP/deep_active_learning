@@ -7,7 +7,6 @@ import tensorflow as tf
 from model.input_pipeline import InputPipeline, ALInputPipeline
 from model.recurrent_model import RecurrentModel, RecurrentConfig
 from word_embedding.word_embedding import get_embedding
-from utils.tensorboard import create_unique_name
 from utils.graphs import accuracy_graph
 from utils.metrics import variation_ratio
 from preprocessing.dataset import load
@@ -34,16 +33,6 @@ class ModelManager:
         input_pipeline.build_pipeline()
 
         return input_pipeline
-
-    def initialize_tensorboard(self):
-        model_name = self.model_params['model_name']
-        self.save_name = create_unique_name(model_name)
-        tensorboard_dir = self.model_params['tensorboard_dir']
-
-        writer = tf.summary.FileWriter(
-            os.path.join(tensorboard_dir, self.save_name))
-
-        return writer
 
     def save_accuracy_graph(self, train_accuracies, val_accuracies):
         graphs_dir = self.model_params['graphs_dir']
@@ -76,10 +65,7 @@ class ModelManager:
 
         self.sess = tf.Session()
 
-        writer = self.initialize_tensorboard()
-        writer.add_graph(self.sess.graph)
-
-        self.recurrent_model.prepare(self.sess, self.input_pipeline)
+        self.recurrent_model.build_graph(self.input_pipeline)
 
         init = tf.global_variables_initializer()
         self.sess.run(init)
@@ -87,7 +73,7 @@ class ModelManager:
         try:
             (best_accuracy, train_accuracies,
                 val_accuracies, test_accuracy) = self.recurrent_model.fit(
-                    self.sess, self.input_pipeline, saved_model_path, writer)
+                    self.sess, self.input_pipeline, saved_model_path)
         except tf.errors.InvalidArgumentError:
             print('Invalid set of arguments ... ')
             train_accuracies, val_accuracies = [], []
@@ -261,6 +247,7 @@ class ActiveLearningModelManager(ModelManager):
         self.model_params['test_data'] = test_dataset
 
         for i in range(self.active_learning_params['num_rounds']):
+            print('Starting round {}'.format(i))
 
             (pool_unlabeled_ids, pool_unlabeled_labels,
              pool_unlabeled_sizes, unlabeled_pool_indexes) = self.select_samples()

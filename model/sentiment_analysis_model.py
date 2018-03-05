@@ -5,7 +5,6 @@ import tensorflow as tf
 
 from model.model import Model
 from utils.progress_bar import Progbar
-from utils.tensorboard import add_array_to_summary_writer
 
 
 class Config:
@@ -42,7 +41,7 @@ class SentimentAnalysisModel(Model):
         self.config = config
         self.verbose = verbose
 
-    def batch_evaluate(self, sess, batch_data, batch_labels):
+    def batch_evaluate(self, sess, acc, acc_size):
         """
         This method is used to calculate en evaluation metric over a batch of
         data.
@@ -57,21 +56,13 @@ class SentimentAnalysisModel(Model):
         """
         return NotImplementedError()
 
-    def evaluate(self, sess, total_batch):
+    def evaluate(self, sess, total_batch, acc, acc_size):
         """
         This method will be used to calculate the accuracy metric over
-        a batch of examples from the validation or test set.
+        a batch of examples.
 
         In order for the accuracy to be right, an weight average must be used
         to calculate the final accuracy.
-
-        Args:
-            sess: A Tensorflow session
-            dataset: A tf.data.Dataset object containing the validation or
-                     test data
-            total_batch: Variable indicating number of batches for the dataset
-        Returns:
-            accuracy: The mean accuracy for the dataset
         """
         ac_accuracy, ac_total = 0, 0
 
@@ -81,7 +72,7 @@ class SentimentAnalysisModel(Model):
 
         while True:
             try:
-                accuracy, size = self.batch_evaluate(sess)
+                accuracy, size = self.batch_evaluate(sess, acc, acc_size)
 
                 ac_accuracy += accuracy
                 ac_total += size
@@ -148,18 +139,14 @@ class SentimentAnalysisModel(Model):
 
         return np.mean(correct_pred)
 
-    def run_epoch(self, sess, dataset, writer, epoch, total_batch):
+    def run_epoch(self, sess, dataset, epoch, total_batch):
         if self.verbose:
             progbar = Progbar(target=total_batch)
             i = 0
 
         while True:
             try:
-                loss, s = self.train_on_batch(sess)
-
-                if i % 20 == 0:
-                    index = (epoch * total_batch) + i
-                    writer.add_summary(s, index)
+                loss = self.train_on_batch(sess)
 
                 if self.verbose:
                     i += 1
@@ -167,11 +154,6 @@ class SentimentAnalysisModel(Model):
 
             except tf.errors.OutOfRangeError:
                 break
-
-    def prepare(self, sess, dataset):
-        sess.run(dataset.train_iterator)
-        data_batch, labels_batch, size_batch = dataset.make_batch()
-        self.build_graph(data_batch, labels_batch, size_batch)
 
     def create_saver(self, saved_model_path):
         if not os.path.exists(saved_model_path):
@@ -201,14 +183,14 @@ class SentimentAnalysisModel(Model):
 
     def run_test_accuracy(self, sess, dataset):
         if self.config.use_test:
-            sess.run(dataset.test_iterator)
+            sess.run(dataset.test_iterator.initializer)
             total_batch = dataset.test_batches
-            accuracy = self.evaluate(sess, total_batch)
+            accuracy = self.evaluate(sess, total_batch, self.test_acc, self.test_acc_size)
             print('Test Accuracy: {}'.format(accuracy))
 
             return accuracy
 
-    def fit(self, sess, dataset, saved_model_path=None, writer=None):
+    def fit(self, sess, dataset, saved_model_path=None):
         train_accuracies = []
         val_accuracies = []
         print('Training model...')
@@ -226,20 +208,24 @@ class SentimentAnalysisModel(Model):
         for epoch in range(self.config.num_epochs):
             print('Running epoch {}'.format(epoch))
             total_batch = dataset.train_batches
-            self.run_epoch(sess, dataset, writer, epoch, total_batch)
+            sess.run(dataset.train_iterator.initializer)
+            self.run_epoch(sess, dataset, epoch, total_batch)
 
             if self.config.use_validation:
-                sess.run(dataset.train_iterator)
-                train_accuracy = self.evaluate(sess, total_batch)
+                sess.run(dataset.train_iterator.initializer)
+                total_batch = dataset.train_batches
+                train_accuracy = self.evaluate(sess, total_batch,
+                                               self.train_acc, self.train_acc_size)
                 train_accuracies.append(train_accuracy)
 
                 total_batch = dataset.validation_batches
-                sess.run(dataset.validation_iterator)
+                sess.run(dataset.validation_iterator.initializer)
 
-                val_accuracy = self.evaluate(sess, total_batch)
-                num_data = self.config.num_validation
+                val_accuracy = self.evaluate(sess, total_batch,
+                                             self.validation_acc, self.validation_acc_size)
 
                 if self.config.use_mc_dropout:
+                    num_data = self.config.num_validation
                     mc_accuracy = self.monte_carlo_dropout_evaluate(
                         sess, dataset.validation_iterator, num_data)
 
@@ -258,13 +244,51 @@ class SentimentAnalysisModel(Model):
 
                 print()
 
-            sess.run(dataset.train_iterator)
-
-        add_array_to_summary_writer(writer, val_accuracies, 'val_accuracy')
-        add_array_to_summary_writer(writer, train_accuracies, 'train_accuracy')
-
         test_accuracy = -1
         if self.config.use_test:
             test_accuracy = self.run_test_accuracy(sess, dataset)
 
         return best_accuracy, train_accuracies, val_accuracies, test_accuracy
+
+    def build_graph(self, dataset):
+        with tf.name_scope('placeholders'):
+            self.add_placeholder()
+
+        with tf.name_scope('iterators'):
+            train_iterator = dataset.train_iterator
+            validation_iterator = dataset.validation_iterator
+            test_iterator = dataset.test_iterator
+
+        with tf.name_scope('train_data'):
+            train_data, train_labels, train_sizes = train_iterator.get_next()
+
+        with tf.name_scope('train'):
+            train_logits = self.get_logits(train_data, train_sizes)
+            self.loss = self.add_loss_op(train_logits, train_labels)
+            self.train = self.add_training_op(self.loss)
+
+        with tf.name_scope('train_accuracy'):
+            self.train_acc, self.train_acc_size = self.add_evaluation_op(
+                train_logits, train_labels)
+
+        with tf.name_scope('validation'):
+            validation_data, validation_labels, validation_sizes = validation_iterator.get_next()
+            validation_logits = self.get_logits(validation_data, validation_sizes, reuse=True)
+            # validation_loss = self.add_loss_op(validation_loss)
+
+            self.validation_acc, self.validation_acc_size = self.add_evaluation_op(
+                validation_logits, validation_labels)
+
+        with tf.name_scope('test_accuracy'):
+            test_data, test_labels, test_sizes = test_iterator.get_next()
+            test_logits = self.get_logits(test_data, test_sizes, reuse=True)
+
+            self.test_acc, self.test_acc_size = self.add_evaluation_op(
+                test_logits, test_labels)
+
+        with tf.name_scope('prediction'):
+            logits = self.get_logits(self.data_placeholder, self.sizes_placeholder, reuse=True)
+            self.predictions = tf.argmax(logits, axis=1)
+
+        with tf.name_scope('summary'):
+            self.summ = tf.summary.merge_all()
