@@ -6,7 +6,7 @@ import tensorflow as tf
 
 from model.input_pipeline import InputPipeline, ALInputPipeline
 from model.recurrent_model import RecurrentModel, RecurrentConfig
-from model.monte_carlo_evaluation import VariationRationMC
+from model.monte_carlo_evaluation import get_monte_carlo_metric
 from word_embedding.word_embedding import get_embedding
 from utils.graphs import accuracy_graph
 from preprocessing.dataset import load
@@ -171,9 +171,11 @@ class ActiveLearningModelManager(ModelManager):
 
         return labeled_dataset, unlabeled_dataset, test_dataset
 
-    def unlabeled_uncertainty(self, pool_ids, pool_sizes,
+    def unlabeled_uncertainty(self, uncertainty_metric, pool_ids, pool_sizes,
                               num_classes, num_samples=10):
-        monte_carlo_evaluation = VariationRationMC(
+        MonteCarlo = get_monte_carlo_metric(uncertainty_metric)
+
+        monte_carlo_evaluation = MonteCarlo(
                 sess=self.sess,
                 model=self.recurrent_model,
                 data_batch=pool_ids,
@@ -203,10 +205,11 @@ class ActiveLearningModelManager(ModelManager):
 
         num_passes = self.active_learning_params['num_passes']
         num_queries = self.active_learning_params['num_queries']
+        uncertainty_metric = self.active_learning_params['uncertainty_metric']
         num_classes = self.model_params['num_classes']
 
         unlabeled_uncertainty = self.unlabeled_uncertainty(
-            pool_ids, pool_sizes, num_classes, num_passes)
+            uncertainty_metric, pool_ids, pool_sizes, num_classes, num_passes)
         new_samples = unlabeled_uncertainty.argsort()[-num_queries:][::-1]
         np.random.shuffle(new_samples)
         self.reset_graph()
@@ -253,6 +256,11 @@ class ActiveLearningModelManager(ModelManager):
         test_accuracies, train_data_sizes = [], []
         self.model_params['num_validation'] = self.active_learning_params['sample_size']
         self.model_params['test_data'] = test_dataset
+
+        uncertainty_metric = self.active_learning_params['uncertainty_metric']
+        uncertainty_metric = uncertainty_metric.replace('_', ' ').title()
+
+        print('Running Active Learning with {} metric'.format(uncertainty_metric))
 
         for i in range(self.active_learning_params['num_rounds']):
             print('Starting round {}'.format(i))

@@ -4,6 +4,13 @@ from utils.metrics import variation_ratio, entropy
 from utils.progress_bar import Progbar
 
 
+def get_monte_carlo_metric(metric):
+    if metric == 'variation_ratio':
+        return VariationRationMC
+    elif metric == 'entropy':
+        return EntropyMC
+
+
 class MonteCarloEvaluation:
 
     def __init__(self, sess, model, data_batch, sizes_batch, labels_batch,

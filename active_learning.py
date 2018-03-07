@@ -165,6 +165,11 @@ def create_argument_parser():
                         type=bool_arguments,
                         help='Define if an accuracy graph should be saved')
 
+    parser.add_argument('-um',
+                        '--uncertainty-metric',
+                        type=str,
+                        help='Type of uncertainty metric to use')
+
     parser.add_argument('-nr',
                         '--num-rounds',
                         type=int,
@@ -207,6 +212,7 @@ def run_active_learning(**user_args):
     active_learning_params = {
         'train_file': user_args['train_file'],
         'test_file': user_args['test_file'],
+        'uncertainty_metric': user_args['uncertainty_metric'],
         'num_rounds': user_args['num_rounds'],
         'sample_size': user_args['sample_size'],
         'num_queries': user_args['num_queries'],
