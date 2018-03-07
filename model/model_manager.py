@@ -6,10 +6,9 @@ import tensorflow as tf
 
 from model.input_pipeline import InputPipeline, ALInputPipeline
 from model.recurrent_model import RecurrentModel, RecurrentConfig
-from model.monte_carlo_evaluation import MonteCarloEvaluation
+from model.monte_carlo_evaluation import VariationRationMC
 from word_embedding.word_embedding import get_embedding
 from utils.graphs import accuracy_graph
-from utils.metrics import variation_ratio
 from preprocessing.dataset import load
 
 
@@ -172,13 +171,19 @@ class ActiveLearningModelManager(ModelManager):
 
         return labeled_dataset, unlabeled_dataset, test_dataset
 
-    def unlabeled_uncertainty(self, pool_unlabeled_ids, pool_unlabeled_sizes, num_samples=10):
-        monte_carlo_evaluation = MonteCarloEvaluation(self.sess, self.recurrent_model, True)
+    def unlabeled_uncertainty(self, pool_ids, pool_sizes,
+                              num_classes, num_samples=10):
+        monte_carlo_evaluation = VariationRationMC(
+                sess=self.sess,
+                model=self.recurrent_model,
+                data_batch=pool_ids,
+                sizes_batch=pool_sizes,
+                labels_batch=None,
+                num_classes=num_classes,
+                num_samples=num_samples,
+                verbose=True)
 
-        all_preds = monte_carlo_evaluation.prediction_samples(
-            pool_unlabeled_ids, pool_unlabeled_sizes, num_samples=num_samples)
-        mc_counts = monte_carlo_evaluation.monte_carlo_samples_count(all_preds)
-        variation_ratios = np.array(variation_ratio(mc_counts))
+        variation_ratios = monte_carlo_evaluation.evaluate()
 
         return variation_ratios
 
@@ -198,8 +203,10 @@ class ActiveLearningModelManager(ModelManager):
 
         num_passes = self.active_learning_params['num_passes']
         num_queries = self.active_learning_params['num_queries']
+        num_classes = self.model_params['num_classes']
 
-        unlabeled_uncertainty = self.unlabeled_uncertainty(pool_ids, pool_sizes, num_passes)
+        unlabeled_uncertainty = self.unlabeled_uncertainty(
+            pool_ids, pool_sizes, num_classes, num_passes)
         new_samples = unlabeled_uncertainty.argsort()[-num_queries:][::-1]
         np.random.shuffle(new_samples)
         self.reset_graph()
