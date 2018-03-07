@@ -48,10 +48,11 @@ MAX_NORM=5
 EMBED_SIZE="$GLOVE_EMBED_SIZE"
 
 #Active Learning parameters
-NUM_ROUNDS=118
+UNCERTAINTY_METRIC="entropy"
+NUM_ROUNDS=249
 SAMPLE_SIZE=2000
-NUM_QUERIES=50
-NUM_PASSES=50
+NUM_QUERIES=100
+NUM_PASSES=1
 INITIAL_TRAINING_SIZE=10
 SAVE_GRAPH_PATH=$GRAPHS_DIR'/al_var_ratio.png'
 SAVE_DATA_FOLDER='data/active_learning'
@@ -84,6 +85,7 @@ python active_learning.py \
     --num-buckets=${NUM_BUCKETS} \
     --use-test=${USE_TEST} \
     --save-graph=${SAVE_GRAPH} \
+    --uncertainty-metric=${UNCERTAINTY_METRIC} \
     --num-rounds=${NUM_ROUNDS} \
     --sample-size=${SAMPLE_SIZE} \
     --num-queries=${NUM_QUERIES} \

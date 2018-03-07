@@ -221,8 +221,10 @@ class SentimentAnalysisModel(Model):
                 test_logits, test_labels)
 
         with tf.name_scope('prediction'):
-            logits = self.get_logits(self.data_placeholder, self.sizes_placeholder, reuse=True)
-            self.predictions = tf.argmax(logits, axis=1)
+            prediction_logits = self.get_logits(
+                self.data_placeholder, self.sizes_placeholder, reuse=True)
+            self.predictions_distribution = tf.nn.softmax(prediction_logits)
+            self.predictions = tf.argmax(prediction_logits, axis=1)
 
         with tf.name_scope('summary'):
             self.summ = tf.summary.merge_all()

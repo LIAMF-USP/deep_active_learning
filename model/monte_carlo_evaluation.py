@@ -47,7 +47,7 @@ class MonteCarloEvaluation:
     def initialize_predictions(self):
         raise NotImplementedError
 
-    def update_predictions(self, predictions, prediction, index):
+    def update_predictions(self, predictions, index):
         raise NotImplementedError
 
     def evaluate(self):
@@ -68,11 +68,7 @@ class MonteCarloEvaluation:
             if self.verbose:
                 progbar = Progbar(target=self.num_samples)
 
-            prediction = self.sess.run(
-                self.model.predictions,
-                feed_dict=self.feed_dict)
-
-            self.update_predictions(predictions, prediction, i)
+            self.update_predictions(predictions, i)
 
             if self.verbose:
                 progbar.update(i + 1, [])
@@ -108,7 +104,11 @@ class VariationRationMC(MonteCarloEvaluation):
     def initialize_predictions(self):
         return np.zeros(shape=(self.data_batch.shape[0], self.num_samples))
 
-    def update_predictions(self, predictions, prediction, index):
+    def update_predictions(self, predictions, index):
+        prediction = self.sess.run(
+            self.model.predictions,
+            feed_dict=self.feed_dict)
+
         predictions[:, index] = prediction
 
     def evaluate(self):
@@ -124,7 +124,11 @@ class EntropyMC(MonteCarloEvaluation):
     def initialize_predictions(self):
         return np.zeros(shape=(self.data_batch.shape[0], self.num_classes))
 
-    def update_predictions(self, predictions, prediction, index):
+    def update_predictions(self, predictions, index):
+        prediction = self.sess.run(
+            self.model.predictions_distribution,
+            feed_dict=self.feed_dict)
+
         predictions += prediction
 
     def evaluate(self):
