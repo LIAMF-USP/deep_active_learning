@@ -1,3 +1,5 @@
+import numpy as np
+
 
 def variation_ratio(mc_counts):
     """
@@ -17,3 +19,19 @@ def variation_ratio(mc_counts):
         variation_ratios.append(variation_ratio)
 
     return variation_ratios
+
+
+def entropy(predictions, num_samples):
+    average_predictions = np.divide(predictions, num_samples)
+
+    np.seterr(divide='ignore')
+    log_average_predictions = np.log2(average_predictions)
+    np.seterr(divide='warn')
+
+    # Prevent against zero probabilities
+    log_average_predictions[np.isneginf(log_average_predictions)] = 0
+
+    entropy_average = -np.multiply(average_predictions, log_average_predictions)
+    entropy_final_value = np.sum(entropy_average, axis=1)
+
+    return entropy_final_value
