@@ -1,6 +1,6 @@
 import numpy as np
 
-from utils.metrics import variation_ratio, entropy
+from utils.metrics import variation_ratio, entropy, bald
 from utils.progress_bar import Progbar
 
 
@@ -9,6 +9,8 @@ def get_monte_carlo_metric(metric):
         return VariationRationMC
     elif metric == 'entropy':
         return EntropyMC
+    elif metric == 'bald':
+        return BaldMC
 
 
 class MonteCarloEvaluation:
@@ -136,3 +138,30 @@ class EntropyMC(MonteCarloEvaluation):
         entropy_values = entropy(all_preds, self.num_samples)
 
         return entropy_values
+
+
+class BaldMC(MonteCarloEvaluation):
+
+    def __init__(self, sess, model, data_batch, sizes_batch, labels_batch,
+                 num_classes, num_samples, verbose):
+        super().__init__(sess, model, data_batch, sizes_batch, labels_batch, num_classes,
+                         num_samples, verbose)
+
+        self.dropout_entropy = np.zeros(shape=(self.data_batch.shape[0]))
+
+    def initialize_predictions(self):
+        return np.zeros(shape=(self.data_batch.shape[0], self.num_classes))
+
+    def update_predictions(self, predictions, index):
+        prediction = self.sess.run(
+            self.model.predictions_distribution,
+            feed_dict=self.feed_dict)
+
+        self.dropout_entropy += entropy(prediction, self.num_samples)
+        predictions += prediction
+
+    def evaluate(self):
+        all_preds = self.prediction_samples()
+        bald_values = bald(all_preds, self.dropout_entropy, self.num_samples)
+
+        return bald_values
