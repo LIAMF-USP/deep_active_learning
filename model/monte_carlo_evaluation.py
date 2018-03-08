@@ -13,6 +13,8 @@ def get_monte_carlo_metric(metric):
         return BaldMC
     elif metric == 'random':
         return Random
+    elif metric == 'softmax':
+        return Softmax
 
 
 class MonteCarloEvaluation:
@@ -196,3 +198,38 @@ class Random(MonteCarloEvaluation):
 
     def evaluate(self):
         return np.random.uniform(size=(self.data_batch.shape[0]))
+
+
+class Softmax(MonteCarloEvaluation):
+
+    def __init__(self, sess, model, data_batch, sizes_batch, labels_batch,
+                 num_classes, num_samples, verbose):
+        super().__init__(sess, model, data_batch, sizes_batch, labels_batch, num_classes,
+                         1, verbose)
+
+    def create_feed_dict(self, data_batch, sizes_batch):
+        recurrent_output_dropout = 1
+        recurrent_state_dropout = 1
+        embedding_dropout = 1
+
+        self.feed_dict = self.model.create_feed_dict(
+            recurrent_output_dropout=recurrent_output_dropout,
+            recurrent_state_dropout=recurrent_state_dropout,
+            embedding_dropout=embedding_dropout,
+            data_placeholder=data_batch,
+            sizes_placeholder=sizes_batch)
+
+    def initialize_predictions(self):
+        return np.zeros(shape=(self.data_batch.shape[0], self.num_classes))
+
+    def update_predictions(self, predictions, index):
+        prediction = self.sess.run(
+            self.model.predictions_distribution,
+            feed_dict=self.feed_dict)
+
+        predictions += prediction
+
+    def evaluate(self):
+        all_preds = self.prediction_samples()
+
+        return np.amax(all_preds, axis=1)
