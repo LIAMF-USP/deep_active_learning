@@ -11,6 +11,8 @@ def get_monte_carlo_metric(metric):
         return EntropyMC
     elif metric == 'bald':
         return BaldMC
+    elif metric == 'random':
+        return Random
 
 
 class MonteCarloEvaluation:
@@ -55,6 +57,11 @@ class MonteCarloEvaluation:
     def evaluate(self):
         raise NotImplementedError
 
+    def create_feed_dict(self, data_batch, sizes_batch):
+        self.feed_dict = self.model.create_feed_dict(
+            data_placeholder=data_batch,
+            sizes_placeholder=sizes_batch)
+
     def prediction_samples(self, preprocess_batch=True):
         predictions = self.initialize_predictions()
 
@@ -62,9 +69,7 @@ class MonteCarloEvaluation:
             data_batch, sizes_batch = self.preprocess_batch(
                 self.data_batch, self.sizes_batch)
 
-        self.feed_dict = self.model.create_feed_dict(
-            data_placeholder=data_batch,
-            sizes_placeholder=sizes_batch)
+        self.create_feed_dict(data_batch, sizes_batch)
 
         for i in range(self.num_samples):
             if self.verbose:
@@ -165,3 +170,29 @@ class BaldMC(MonteCarloEvaluation):
         bald_values = bald(all_preds, self.dropout_entropy, self.num_samples)
 
         return bald_values
+
+
+class Random(MonteCarloEvaluation):
+
+    def __init__(self, sess, model, data_batch, sizes_batch, labels_batch,
+                 num_classes, num_samples, verbose):
+        super().__init__(sess, model, data_batch, sizes_batch, labels_batch, num_classes,
+                         0, verbose)
+
+    def create_feed_dict(self, data_batch, sizes_batch):
+        recurrent_output_dropout = 1
+        recurrent_state_dropout = 1
+        embedding_dropout = 1
+
+        self.feed_dict = self.model.create_feed_dict(
+            recurrent_output_dropout=recurrent_output_dropout,
+            recurrent_state_dropout=recurrent_state_dropout,
+            embedding_dropout=embedding_dropout,
+            data_placeholder=data_batch,
+            sizes_placeholder=sizes_batch)
+
+    def initialize_predictions(self):
+        return None
+
+    def evaluate(self):
+        return np.random.uniform(size=(self.data_batch.shape[0]))
