@@ -35,3 +35,12 @@ def entropy(predictions, num_samples):
     entropy_final_value = np.sum(entropy_average, axis=1)
 
     return entropy_final_value
+
+
+def bald(predictions, all_entropy_dropout, num_samples):
+    entropy_value = entropy(predictions, num_samples)
+    average_entropy = np.divide(all_entropy_dropout, num_samples)
+
+    bald = entropy_value - average_entropy
+
+    return bald
