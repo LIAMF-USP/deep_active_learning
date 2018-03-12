@@ -249,7 +249,23 @@ class ActiveLearningModelManager(ModelManager):
                                                        axis=0)
         self.unlabeled_dataset_sizes = np.concatenate([delete_sizes, delete_sizes_sample], axis=0)
 
+    def set_random_seeds(self):
+        metric = self.active_learning_params['uncertainty_metric']
+
+        if metric == 'variation_ratio':
+            random.seed(9011)
+        elif metric == 'entropy':
+            random.seed(2001)
+        elif metric == 'bald':
+            random.seed(5001)
+        elif metric == 'random':
+            random.seed(9001)
+        elif metric == 'softmax':
+            return random.seed(7001)
+
     def run_cycle(self):
+        self.set_random_seeds()
+
         (self.labeled_dataset, unlabeled_dataset,
          test_dataset) = self.create_initial_dataset()
 
