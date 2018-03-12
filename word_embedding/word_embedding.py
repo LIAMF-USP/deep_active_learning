@@ -97,11 +97,16 @@ class WordEmbedding:
             if dynamic_sentence_size:
                 sentence_size = len(words)
 
-            for index, word in enumerate(words[:sentence_size]):
+            new_words = []
+            for word in words[:sentence_size]:
                 if word not in self.word_index:
-                    words[index] = UNK_TOKEN
+                    new_words.append(UNK_TOKEN)
+                else:
+                    new_words.append(word)
 
-            review = ' '.join(words)
+            assert len(new_words) <= sentence_size
+
+            review = ' '.join(new_words)
             processed_reviews.append((review, label))
 
             if progbar:
