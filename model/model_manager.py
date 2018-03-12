@@ -186,6 +186,7 @@ class ActiveLearningModelManager(ModelManager):
                 labels_batch=None,
                 num_classes=num_classes,
                 num_samples=num_samples,
+                max_len=self.active_learning_params['max_len'],
                 verbose=True)
 
         variation_ratios = monte_carlo_evaluation.evaluate()

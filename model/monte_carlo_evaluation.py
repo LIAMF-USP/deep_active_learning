@@ -20,7 +20,7 @@ def get_monte_carlo_metric(metric):
 class MonteCarloEvaluation:
 
     def __init__(self, sess, model, data_batch, sizes_batch, labels_batch,
-                 num_classes, num_samples, verbose):
+                 num_classes, num_samples, max_len, verbose):
         self.sess = sess
         self.model = model
 
@@ -29,21 +29,21 @@ class MonteCarloEvaluation:
         self.labels_batch = labels_batch
         self.num_classes = num_classes
         self.num_samples = num_samples
+        self.max_len = max_len
 
         self.verbose = verbose
 
     def preprocess_batch(self, data_batch, sizes_batch):
         preprocessed_batch = []
         preprocessed_sizes_batch = []
-        max_len = 500
 
         for data, size in zip(data_batch, sizes_batch):
-            if len(data) < max_len:
-                data += [0] * (max_len - len(data))
+            if len(data) < self.max_len:
+                data += [0] * (self.max_len - len(data))
 
-            elif len(data) > max_len:
-                data = data[:max_len]
-                size = max_len
+            elif len(data) > self.max_len:
+                data = data[:self.max_len]
+                size = self.max_len
 
             preprocessed_batch.append(data)
             preprocessed_sizes_batch.append(size)
@@ -150,9 +150,9 @@ class EntropyMC(MonteCarloEvaluation):
 class BaldMC(MonteCarloEvaluation):
 
     def __init__(self, sess, model, data_batch, sizes_batch, labels_batch,
-                 num_classes, num_samples, verbose):
+                 num_classes, num_samples, max_len, verbose):
         super().__init__(sess, model, data_batch, sizes_batch, labels_batch, num_classes,
-                         num_samples, verbose)
+                         num_samples, max_len, verbose)
 
         self.dropout_entropy = np.zeros(shape=(self.data_batch.shape[0]))
 
@@ -177,9 +177,9 @@ class BaldMC(MonteCarloEvaluation):
 class Random(MonteCarloEvaluation):
 
     def __init__(self, sess, model, data_batch, sizes_batch, labels_batch,
-                 num_classes, num_samples, verbose):
+                 num_classes, num_samples, max_len, verbose):
         super().__init__(sess, model, data_batch, sizes_batch, labels_batch, num_classes,
-                         0, verbose)
+                         0, max_len, verbose)
 
     def create_feed_dict(self, data_batch, sizes_batch):
         recurrent_output_dropout = 1
@@ -203,9 +203,9 @@ class Random(MonteCarloEvaluation):
 class Softmax(MonteCarloEvaluation):
 
     def __init__(self, sess, model, data_batch, sizes_batch, labels_batch,
-                 num_classes, num_samples, verbose):
+                 num_classes, num_samples, max_len, verbose):
         super().__init__(sess, model, data_batch, sizes_batch, labels_batch, num_classes,
-                         1, verbose)
+                         1, max_len, verbose)
 
     def create_feed_dict(self, data_batch, sizes_batch):
         recurrent_output_dropout = 1

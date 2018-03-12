@@ -31,7 +31,7 @@ class RecurrentModel(SentimentAnalysisModel):
         self.embedding_dropout_placeholder = tf.placeholder(tf.float32)
 
         self.data_placeholder = tf.placeholder(
-            tf.int32, shape=[None, 500], name='data_placeholder')
+            tf.int32, shape=[None, 600], name='data_placeholder')
         self.sizes_placeholder = tf.placeholder(
             tf.int32, shape=[None], name='sizes_placeholder')
         self.labels_placeholder = tf.placeholder(
