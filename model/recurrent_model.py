@@ -20,8 +20,8 @@ class RecurrentConfig(Config):
 
 class RecurrentModel(SentimentAnalysisModel):
 
-    def __init__(self, config, pretrained_embeddings):
-        super().__init__(config)
+    def __init__(self, config, pretrained_embeddings, verbose):
+        super().__init__(config, verbose)
 
         self.pretrained_embeddings = pretrained_embeddings
 

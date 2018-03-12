@@ -15,9 +15,10 @@ from preprocessing.dataset import load
 
 class ModelManager:
 
-    def __init__(self, model_params):
+    def __init__(self, model_params, verbose=True):
         self.model_params = model_params
         self.sess = None
+        self.verbose = verbose
 
     def create_dataset(self):
         train_file = self.model_params['train_file']
@@ -62,7 +63,8 @@ class ModelManager:
 
         print('Creating Recurrent model...')
         recurrent_config = RecurrentConfig(self.model_params)
-        self.recurrent_model = RecurrentModel(recurrent_config, embedding_matrix)
+        self.recurrent_model = RecurrentModel(
+            recurrent_config, embedding_matrix, self.verbose)
 
         saved_model_path = self.model_params['saved_model_folder']
 
@@ -96,9 +98,9 @@ class ModelManager:
 
 class ActiveLearningModelManager(ModelManager):
 
-    def __init__(self, model_params, active_learning_params):
+    def __init__(self, model_params, active_learning_params, verbose):
         self.active_learning_params = active_learning_params
-        super().__init__(model_params)
+        super().__init__(model_params, verbose)
 
     def create_dataset(self):
         train_data = self.model_params['train_data']

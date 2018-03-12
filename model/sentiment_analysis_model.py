@@ -159,6 +159,7 @@ class SentimentAnalysisModel(Model):
             self.run_epoch(sess, dataset, epoch, total_batch)
 
             if self.config.use_validation:
+                print('Evaluating model for epoch {} ...'.format(epoch))
                 sess.run(dataset.train_iterator.initializer)
                 total_batch = dataset.train_batches
                 train_accuracy = self.evaluate(sess, total_batch,

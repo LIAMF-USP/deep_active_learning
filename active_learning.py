@@ -266,7 +266,8 @@ def run_active_learning(**user_args):
         'num_buckets': user_args['num_buckets']
     }
 
-    al_model_manager = ActiveLearningModelManager(model_params, active_learning_params)
+    al_model_manager = ActiveLearningModelManager(
+        model_params, active_learning_params, verbose=False)
     train_data, test_accuracies = al_model_manager.run_cycle()
 
     save_graph_path = user_args['save_graph_path']
