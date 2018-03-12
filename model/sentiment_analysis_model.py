@@ -110,13 +110,15 @@ class SentimentAnalysisModel(Model):
             print('Loading saved model ...')
             self.saver.restore(sess, saved_model_path)
 
-            sess.run(dataset.validation_iterator)
+            sess.run(dataset.validation_iterator.initializer)
             total_batch = dataset.validation_batches
-            val_accuracy = self.evaluate(sess, total_batch)
+            val_accuracy = self.evaluate(sess, total_batch,
+                                         self.validation_acc, self.validation_acc_size)
 
-            sess.run(dataset.train_iterator)
+            sess.run(dataset.train_iterator.initializer)
             total_batch = dataset.train_batches
-            train_accuracy = self.evaluate(sess, total_batch)
+            train_accuracy = self.evaluate(sess, total_batch,
+                                           self.train_acc, self.train_acc_size)
 
             print('Train accuracy for saved model: {:.3f}'.format(train_accuracy))
             print('Validation accuracy for saved model: {:.3f}'.format(val_accuracy))
@@ -143,11 +145,12 @@ class SentimentAnalysisModel(Model):
         saved_model_path = os.path.join(
             saved_model_path, self.config.model_name + '.ckpt')
 
+        best_accuracy = -1
+        test_accuracy = -1
+
         if self.check_saved_model(sess, dataset, saved_model_path):
             best_accuracy = self.run_test_accuracy(sess, dataset)
-            return best_accuracy, train_accuracies, val_accuracies
-
-        best_accuracy = -1
+            return best_accuracy, train_accuracies, val_accuracies, best_accuracy
 
         for epoch in range(self.config.num_epochs):
             print('Running epoch {}'.format(epoch))
@@ -178,7 +181,6 @@ class SentimentAnalysisModel(Model):
                 print('Validation Accuracy for epoch {}: {}'.format(epoch, val_accuracy))
                 print()
 
-        test_accuracy = -1
         if self.config.use_test:
             test_accuracy = self.run_test_accuracy(sess, dataset)
 
