@@ -41,6 +41,11 @@ def create_argument_parser():
                         type=str,
                         help='Location to search/save models. The model name variable will be used for searching')  # noqa
 
+    parser.add_argument('-shs',
+                        '--should-save',
+                        type=bool_arguments,
+                        help='If the model should be saved')
+
     parser.add_argument('-nt',
                         '--num-train',
                         type=int,

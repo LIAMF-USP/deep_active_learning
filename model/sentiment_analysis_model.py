@@ -27,6 +27,7 @@ class Config:
         self.model_name = user_args['model_name']
         self.use_validation = user_args['use_validation']
         self.use_mc_dropout = user_args['use_mc_dropout']
+        self.should_save = user_args['should_save']
 
 
 class SentimentAnalysisModel(Model):
@@ -151,7 +152,7 @@ class SentimentAnalysisModel(Model):
         best_accuracy = -1
         test_accuracy = -1
 
-        if self.check_saved_model(sess, dataset, saved_model_path):
+        if self.config.should_save and self.check_saved_model(sess, dataset, saved_model_path):
             best_accuracy = self.run_test_accuracy(sess, dataset)
             return best_accuracy, train_accuracies, val_accuracies, best_accuracy
 
@@ -177,7 +178,9 @@ class SentimentAnalysisModel(Model):
 
                 if val_accuracy > best_accuracy:
                     best_accuracy = val_accuracy
-                    self.saver.save(sess, saved_model_path)
+
+                    if self.config.should_save:
+                        self.saver.save(sess, saved_model_path)
 
                 print('Train Accuracy for epoch {}: {}'.format(epoch, train_accuracy))
                 print('Validation Accuracy for epoch {}: {}'.format(epoch, val_accuracy))

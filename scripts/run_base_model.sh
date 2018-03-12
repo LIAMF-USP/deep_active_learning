@@ -18,6 +18,7 @@ WORD2VEC_VALIDATION_FILE="data/word2vec/aclImdb_formatted/val/val.tfrecord"
 WORD2VEC_TEST_FILE="data/word2vec/aclImdb_formatted/test/test.tfrecord"
 
 SAVED_MODEL_FOLDER="saved_models"
+SHOULD_SAVE=0
 
 NUM_TRAIN=22500
 NUM_VALIDATION=2500
@@ -40,14 +41,14 @@ WORD2VEC_EMBED_SIZE=300
 
 GRAPHS_DIR='graphs'
 
-NUM_EPOCHS=100
+NUM_EPOCHS=16
 NUM_CLASSES=2
 
 USE_VALIDATION=1
 USE_MC_DROPOUT=0
 PERFORM_SHUFFLE=1
 SAVE_GRAPH=1
-USE_TEST=0
+USE_TEST=1
 
 #Bucket paramets
 BUCKET_WIDTH=30
@@ -77,6 +78,7 @@ python base_model.py \
     --validation-file=${VALIDATION_FILE} \
     --test-file=${TEST_FILE} \
     --saved-model-folder=${SAVED_MODEL_FOLDER} \
+    --should-save=${SHOULD_SAVE} \
     --num-train=${NUM_TRAIN} \
     --num-validation=${NUM_VALIDATION} \
     --num-test=${NUM_TEST} \
