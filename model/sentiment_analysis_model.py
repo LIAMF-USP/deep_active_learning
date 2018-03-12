@@ -83,8 +83,11 @@ class SentimentAnalysisModel(Model):
             except tf.errors.OutOfRangeError:
                 return ac_accuracy / ac_total
 
-    def run_epoch(self, sess, dataset, epoch, total_batch):
+    def run_epoch(self, sess, dataset, epoch):
+        sess.run(dataset.train_iterator.initializer)
+
         if self.verbose:
+            total_batch = dataset.train_batches
             progbar = Progbar(target=total_batch)
             i = 0
 
@@ -130,7 +133,7 @@ class SentimentAnalysisModel(Model):
     def run_test_accuracy(self, sess, dataset):
         if self.config.use_test:
             sess.run(dataset.test_iterator.initializer)
-            total_batch = dataset.test_batches
+            total_batch = dataset.test_batches if self.verbose else 0
             accuracy = self.evaluate(sess, total_batch, self.test_acc, self.test_acc_size)
             print('Test Accuracy: {}'.format(accuracy))
 
@@ -154,9 +157,7 @@ class SentimentAnalysisModel(Model):
 
         for epoch in range(self.config.num_epochs):
             print('Running epoch {}'.format(epoch))
-            total_batch = dataset.train_batches
-            sess.run(dataset.train_iterator.initializer)
-            self.run_epoch(sess, dataset, epoch, total_batch)
+            self.run_epoch(sess, dataset, epoch)
 
             if self.config.use_validation:
                 print('Evaluating model for epoch {} ...'.format(epoch))

@@ -51,7 +51,9 @@ class ModelManager:
         print('Creating dataset...')
         self.input_pipeline = self.create_dataset()
         print('Calculating number of batches...')
-        self.input_pipeline.get_datasets_num_batches()
+
+        if self.verbose:
+            self.input_pipeline.get_datasets_num_batches()
 
         print('Loading embedding file...')
         embedding_file = self.model_params['embedding_file']
