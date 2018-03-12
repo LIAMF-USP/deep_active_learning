@@ -191,8 +191,9 @@ class ActiveLearningModelManager(ModelManager):
                 num_classes=num_classes,
                 num_samples=num_samples,
                 max_len=self.active_learning_params['max_len'],
-                verbose=True)
+                verbose=self.verbose)
 
+        print('Getting prediction samples ...')
         variation_ratios = monte_carlo_evaluation.evaluate()
 
         return variation_ratios
