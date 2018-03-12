@@ -16,9 +16,9 @@ NUM_TEST=25000
 MODEL_NAME='base_model'
 TENSORBOARD_DIR='tensorboard_logs'
 
-FASTTEXT_EMBEDDING_FILE="data/fasttext/wiki.en.vec"
-FASTTEXT_EMBEDDING_PICKLE="data/fasttext/fasttext.pkl"
-FASTTEXT_EMBED_SIZE=300
+GLOVE_EMBEDDING_FILE="data/glove/glove.6B.100d.txt"
+GLOVE_EMBEDDING_PICKLE="data/active_learning/glove.pkl"
+GLOVE_EMBED_SIZE=100
 
 GRAPHS_DIR='graphs'
 
@@ -73,13 +73,13 @@ do
       --graphs-dir=${GRAPHS_DIR} \
       --model-name=${MODEL_NAME} \
       --tensorboard-dir=${TENSORBOARD_DIR} \
-      --embedding-file=${FASTTEXT_EMBEDDING_FILE} \
-      --embedding-pickle=${FASTTEXT_EMBEDDING_PICKLE} \
+      --embedding-file=${GLOVE_EMBEDDING_FILE} \
+      --embedding-pickle=${GLOVE_EMBEDDING_PICKLE} \
       --learning-rate=${LEARNING_RATE} \
       --batch-size=${BATCH_SIZE} \
       --num-epochs=${NUM_EPOCHS} \
       --perform-shuffle=${PERFORM_SHUFFLE} \
-      --embed-size=${FASTTEXT_EMBED_SIZE} \
+      --embed-size=${GLOVE_EMBED_SIZE} \
       --num-units=${NUM_UNITS} \
       --num-classes=${NUM_CLASSES} \
       --recurrent-output-dropout=${RECURRENT_OUTPUT_DROPOUT} \
