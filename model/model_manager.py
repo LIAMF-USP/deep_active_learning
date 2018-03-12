@@ -9,6 +9,7 @@ from model.recurrent_model import RecurrentModel, RecurrentConfig
 from model.monte_carlo_evaluation import get_monte_carlo_metric
 from word_embedding.word_embedding import get_embedding
 from utils.graphs import accuracy_graph
+from utils.tensorboard import create_unique_name
 from preprocessing.dataset import load
 
 
@@ -36,11 +37,13 @@ class ModelManager:
 
     def save_accuracy_graph(self, train_accuracies, val_accuracies):
         graphs_dir = self.model_params['graphs_dir']
+        model_name = self.model_params['model_name']
+        save_name = create_unique_name(model_name)
 
         if not os.path.exists(graphs_dir):
             os.makedirs(graphs_dir)
 
-        save_path = os.path.join(graphs_dir, self.save_name)
+        save_path = os.path.join(graphs_dir, save_name)
         accuracy_graph(train_accuracies, val_accuracies, save_path)
 
     def run_model(self):
