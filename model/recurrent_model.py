@@ -71,12 +71,14 @@ class RecurrentModel(SentimentAnalysisModel):
 
         with tf.name_scope('embeddings'):
             vocab_size = len(self.pretrained_embeddings)
-            base_embeddings = tf.get_variable(
+            self.base_embeddings = tf.get_variable(
                 'embeddings',
                 shape=(vocab_size, self.config.embed_size),
-                initializer=tf.constant_initializer(self.pretrained_embeddings),
+                initializer=tf.zeros_initializer(),
                 dtype=tf.float32)
-            embeddings_dropout = tf.nn.dropout(base_embeddings, self.embedding_dropout_placeholder)
+
+            embeddings_dropout = tf.nn.dropout(
+                self.base_embeddings, self.embedding_dropout_placeholder)
             inputs = tf.nn.embedding_lookup(embeddings_dropout, inputs)
 
         return inputs
@@ -174,3 +176,16 @@ class RecurrentModel(SentimentAnalysisModel):
         accuracy, total = sess.run([accuracy, size], feed_dict=feed)
 
         return accuracy, total
+
+    def initialize_embeddings(self, sess):
+        feed_dict = {self.embedding_placeholder: self.pretrained_embeddings}
+        sess.run(self.embedding_init, feed_dict=feed_dict)
+
+    def build_graph(self, dataset):
+        super().build_graph(dataset)
+
+        with tf.name_scope('embedding_initializer'):
+            vocab_size = len(self.pretrained_embeddings)
+            self.embedding_placeholder = tf.placeholder(
+                    tf.float32, shape=(vocab_size, self.config.embed_size))
+            self.embedding_init = self.base_embeddings.assign(self.embedding_placeholder)

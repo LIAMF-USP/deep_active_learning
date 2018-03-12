@@ -54,7 +54,10 @@ class SentimentAnalysisModel(Model):
             metric_value: The value of the metric for the batch
             size: The size of the batch used to calculate this metric.
         """
-        return NotImplementedError()
+        return NotImplementedError
+
+    def initialize_embeddings(self, sess):
+        return NotImplementedError
 
     def evaluate(self, sess, total_batch, acc, acc_size):
         """
@@ -152,6 +155,8 @@ class SentimentAnalysisModel(Model):
         best_accuracy = -1
         test_accuracy = -1
 
+        self.initialize_embeddings(sess)
+
         if self.config.should_save and self.check_saved_model(sess, dataset, saved_model_path):
             best_accuracy = self.run_test_accuracy(sess, dataset)
             return best_accuracy, train_accuracies, val_accuracies, best_accuracy
@@ -232,6 +237,3 @@ class SentimentAnalysisModel(Model):
                 self.data_placeholder, self.sizes_placeholder, reuse=True)
             self.predictions_distribution = tf.nn.softmax(prediction_logits)
             self.predictions = tf.argmax(prediction_logits, axis=1)
-
-        with tf.name_scope('summary'):
-            self.summ = tf.summary.merge_all()
