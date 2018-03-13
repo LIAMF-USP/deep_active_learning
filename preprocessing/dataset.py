@@ -93,7 +93,7 @@ class MovieReviewDataset:
             pos_train_reviews, neg_train_reviews = self.apply_data_preprocessing('train')
             self.train_reviews = self.create_unified_dataset(pos_train_reviews, neg_train_reviews)
 
-            if self.validation_reviews:
+            if not self.validation_reviews:
                 print('Creating validation reviews')
                 if self.create_validation_dataset:
                     self.train_reviews, self.validation_reviews = self.split_reviews(

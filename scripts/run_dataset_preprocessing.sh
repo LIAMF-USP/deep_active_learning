@@ -19,46 +19,6 @@ GLOVE_FILE="data/glove/glove.6B.100d.txt"
 SENTENCE_SIZE=600
 EMBED_SIZE=100
 
-EMBEDDING_PATH="data/active_learning/glove.pkl"
-EMBEDDING_WORDINDEX_PATH="data/active_learning/glove_word_index.pkl"
-ACTIVE_LEARNING_OUTPUT_DIR="data/active_learning/aclImdb_formatted"
-DATASET_TYPE='active_learning'
-
-echo "Preprocessing Active Learning data..."
-python preprocess_dataset.py \
-    --data-dir=${DATA_DIR} \
-    --data-output-dir=${DATA_OUTPUT_DIR} \
-    --dataset-type=${DATASET_TYPE} \
-    --train-save-path=${TRAIN_SAVE_PATH} \
-    --validation-save-path=${VALIDATION_SAVE_PATH} \
-    --test-save-path=${TEST_SAVE_PATH} \
-    --embedding-file=${GLOVE_FILE} \
-    --embedding-path=${EMBEDDING_PATH} \
-    --embedding-wordindex-path=${EMBEDDING_WORDINDEX_PATH} \
-    --embed-size=${EMBED_SIZE} \
-    --sentence-size=${SENTENCE_SIZE} \
-    --output-dir=${ACTIVE_LEARNING_OUTPUT_DIR}
-
-EMBEDDING_PATH="data/debug/glove.pkl"
-EMBEDDING_WORDINDEX_PATH="data/debug/glove_word_index.pkl"
-DEBUG_OUTPUT_DIR="data/debug/aclImdb_formatted"
-DATASET_TYPE='debug'
-
-echo "Preprocessing DEBUG data..."
-python preprocess_dataset.py \
-    --data-dir=${DATA_DIR} \
-    --data-output-dir=${DATA_OUTPUT_DIR} \
-    --dataset-type=${DATASET_TYPE} \
-    --train-save-path=${TRAIN_SAVE_PATH} \
-    --validation-save-path=${VALIDATION_SAVE_PATH} \
-    --test-save-path=${TEST_SAVE_PATH} \
-    --embedding-file=${GLOVE_FILE} \
-    --embedding-path=${EMBEDDING_PATH} \
-    --embedding-wordindex-path=${EMBEDDING_WORDINDEX_PATH} \
-    --embed-size=${EMBED_SIZE} \
-    --sentence-size=${SENTENCE_SIZE} \
-    --output-dir=${DEBUG_OUTPUT_DIR}
-
 EMBEDDING_PATH="data/glove/glove.pkl"
 EMBEDDING_WORDINDEX_PATH="data/glove/glove_word_index.pkl"
 GLOVE_OUTPUT_DIR="data/glove/aclImdb_formatted"
@@ -120,3 +80,43 @@ python preprocess_dataset.py \
     --embed-size=${EMBED_SIZE} \
     --sentence-size=${SENTENCE_SIZE} \
     --output-dir=${WORD2VEC_OUTPUT_DIR}
+
+EMBEDDING_PATH="data/debug/glove.pkl"
+EMBEDDING_WORDINDEX_PATH="data/debug/glove_word_index.pkl"
+DEBUG_OUTPUT_DIR="data/debug/aclImdb_formatted"
+DATASET_TYPE='debug'
+
+echo "Preprocessing DEBUG data..."
+python preprocess_dataset.py \
+    --data-dir=${DATA_DIR} \
+    --data-output-dir=${DATA_OUTPUT_DIR} \
+    --dataset-type=${DATASET_TYPE} \
+    --train-save-path=${TRAIN_SAVE_PATH} \
+    --validation-save-path=${VALIDATION_SAVE_PATH} \
+    --test-save-path=${TEST_SAVE_PATH} \
+    --embedding-file=${GLOVE_FILE} \
+    --embedding-path=${EMBEDDING_PATH} \
+    --embedding-wordindex-path=${EMBEDDING_WORDINDEX_PATH} \
+    --embed-size=${EMBED_SIZE} \
+    --sentence-size=${SENTENCE_SIZE} \
+    --output-dir=${DEBUG_OUTPUT_DIR}
+
+EMBEDDING_PATH="data/active_learning/glove.pkl"
+EMBEDDING_WORDINDEX_PATH="data/active_learning/glove_word_index.pkl"
+ACTIVE_LEARNING_OUTPUT_DIR="data/active_learning/aclImdb_formatted"
+DATASET_TYPE='active_learning'
+
+echo "Preprocessing Active Learning data..."
+python preprocess_dataset.py \
+    --data-dir=${DATA_DIR} \
+    --data-output-dir=${DATA_OUTPUT_DIR} \
+    --dataset-type=${DATASET_TYPE} \
+    --train-save-path=${TRAIN_SAVE_PATH} \
+    --validation-save-path=${VALIDATION_SAVE_PATH} \
+    --test-save-path=${TEST_SAVE_PATH} \
+    --embedding-file=${GLOVE_FILE} \
+    --embedding-path=${EMBEDDING_PATH} \
+    --embedding-wordindex-path=${EMBEDDING_WORDINDEX_PATH} \
+    --embed-size=${EMBED_SIZE} \
+    --sentence-size=${SENTENCE_SIZE} \
+    --output-dir=${ACTIVE_LEARNING_OUTPUT_DIR}
