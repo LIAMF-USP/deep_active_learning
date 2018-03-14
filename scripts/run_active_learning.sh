@@ -5,8 +5,8 @@ set -e
 #usage
 #./script/run_active_learning.sh
 
-AL_TRAIN_FILE="data/active_learning/aclImdb_formatted/train/train.pkl"
-AL_TEST_FILE="data/active_learning/aclImdb_formatted/test/test.pkl"
+AL_TRAIN_FILE="data/glove/aclImdb_formatted/train/train.pkl"
+AL_TEST_FILE="data/glove/aclImdb_formatted/test/test.pkl"
 
 SAVED_MODEL_FOLDER="saved_models"
 
@@ -17,7 +17,7 @@ MODEL_NAME='base_model'
 TENSORBOARD_DIR='tensorboard_logs'
 
 GLOVE_EMBEDDING_FILE="data/glove/glove.6B.100d.txt"
-GLOVE_EMBEDDING_PICKLE="data/active_learning/glove.pkl"
+GLOVE_EMBEDDING_PICKLE="data/glove/glove.pkl"
 GLOVE_EMBED_SIZE=100
 
 GRAPHS_DIR='graphs'
@@ -35,20 +35,20 @@ BUCKET_WIDTH=30
 NUM_BUCKETS=30
 
 #Hyper-parameters
-LEARNING_RATE=0.00214
+LEARNING_RATE=0.00410
 BATCH_SIZE=32
 NUM_UNITS=161
-RECURRENT_OUTPUT_DROPOUT=0.905
-RECURRENT_STATE_DROPOUT=0.331
-EMBEDDING_DROPOUT=0.759
-WEIGHT_DECAY=0.0000713144
+RECURRENT_OUTPUT_DROPOUT=0.694
+RECURRENT_STATE_DROPOUT=0.855
+EMBEDDING_DROPOUT=0.267
+WEIGHT_DECAY=0.0003097047
 CLIP_GRADIENTS=0
 MAX_NORM=5
 
 EMBED_SIZE="$GLOVE_EMBED_SIZE"
 
 #Active Learning parameters
-NUM_ROUNDS=249
+NUM_ROUNDS=223
 SAMPLE_SIZE=2000
 NUM_QUERIES=100
 NUM_PASSES=100
