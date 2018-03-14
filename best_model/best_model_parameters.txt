@@ -1,11 +1,11 @@
-Embedding:FastText,lr:0.00214,out_drop:0.905,var_drop:0.331,emb_drop:0.759,batch:32,epoch:16,units:161,decay:0.0000713144
-Embedding:FastText
-lr:0.00214
-out_drop:0.905
-var_drop:0.331
-emb_drop:0.759
-batch:32
+Embedding:GloVe,lr:0.00410,out_drop:0.694,var_drop:0.855,emb_drop:0.267,batch:64,epoch:16,units:285,decay:0.0003097047
+Embedding:GloVe
+lr:0.00410
+out_drop:0.694
+var_drop:0.855
+emb_drop:0.267
+batch:64
 epoch:16
-units:161
-decay:0.0000713144
-accuracy: 0.894
+units:285
+decay:0.0003097047
+accuracy: 0.8992

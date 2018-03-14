@@ -56,7 +56,7 @@ word_embeddings = {
 }
 
 BATCH_SIZES = [32, 64, 128]
-NUM_EPOCHS = [4, 8, 10, 12, 14, 16, 18, 20, 30, 40]
+NUM_EPOCHS = [4, 8, 10, 12, 14, 16]
 
 
 class RandomParameterSearch:
@@ -86,7 +86,8 @@ class RandomParameterSearch:
         self.save_graph = 0
 
     def get_embedding(self):
-        return word_embeddings[random.randint(0, 2)]
+        # Fix word embeddings to Glove due to performance reasons
+        return word_embeddings[0]
 
     def get_batch_size(self):
         return BATCH_SIZES[random.randint(0, len(BATCH_SIZES) - 1)]
@@ -161,7 +162,7 @@ class RandomParameterSearch:
     def find_best_parameters(self, save_path, save_graph=False, verbose=True):
         best_accuracy = -1
         best_model = None
-        model_manager = ModelManager(None)
+        model_manager = ModelManager(None, verbose=verbose)
 
         for sample in range(self.num_samples):
             self.sample_parameters()
@@ -200,7 +201,8 @@ class RandomParameterSearch:
                     'bucket_width': self.bucket_width,
                     'num_buckets': self.num_buckets,
                     'use_test': self.use_test,
-                    'save_graph': self.save_graph
+                    'save_graph': self.save_graph,
+                    'should_save': False
                 }
                 model_manager.model_params = model_params
                 accuracy, _, _, _ = model_manager.run_model()
