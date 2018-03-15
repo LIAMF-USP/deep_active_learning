@@ -164,7 +164,7 @@ class BaldMC(MonteCarloEvaluation):
             self.model.predictions_distribution,
             feed_dict=self.feed_dict)
 
-        self.dropout_entropy += entropy(prediction, self.num_samples)
+        self.dropout_entropy += entropy(prediction, 1)
         predictions += prediction
 
     def evaluate(self):

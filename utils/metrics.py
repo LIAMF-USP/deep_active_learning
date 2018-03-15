@@ -28,9 +28,6 @@ def entropy(predictions, num_samples):
     log_average_predictions = np.log2(average_predictions)
     np.seterr(divide='warn')
 
-    # Prevent against zero probabilities
-    log_average_predictions[np.isneginf(log_average_predictions)] = 0
-
     entropy_average = -np.multiply(average_predictions, log_average_predictions)
     entropy_final_value = np.sum(entropy_average, axis=1)
 
