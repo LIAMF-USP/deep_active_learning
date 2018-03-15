@@ -17,12 +17,6 @@ class MetricTest(unittest.TestCase):
         self.assertEqual(variation_ratio(mc_counts), expected_variation_ratio)
 
     def test_entropy(self):
-        predictions = np.array([[3, 0], [3, 0], [3, 0]])
-        num_samples = 3
-
-        expected_entropy = np.array([0, 0, 0])
-        np.testing.assert_array_equal(expected_entropy, entropy(predictions, num_samples))
-
         predictions = np.array([[1.5, 1.5], [1.5, 1.5], [1.5, 1.5]])
         num_samples = 3
 
@@ -30,14 +24,6 @@ class MetricTest(unittest.TestCase):
         np.testing.assert_array_equal(expected_entropy, entropy(predictions, num_samples))
 
     def test_bald(self):
-        predictions = np.array([[3, 0], [3, 0], [3, 0]])
-        all_entropy_dropout = np.array([0, 0, 0])
-        num_samples = 3
-
-        expected_bald = np.array([0, 0, 0])
-        np.testing.assert_array_equal(
-            expected_bald, bald(predictions, all_entropy_dropout, num_samples))
-
         predictions = np.array([[1.5, 1.5], [1.5, 1.5], [1.5, 1.5]])
         all_entropy_dropout = np.array([3, 3, 3])
         num_samples = 3

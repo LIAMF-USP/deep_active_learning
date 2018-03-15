@@ -12,7 +12,7 @@ class ActiveLearningTest(unittest.TestCase):
         label = 0
         size = 2
 
-        al_model_manager = ActiveLearningModelManager(None, None)
+        al_model_manager = ActiveLearningModelManager(None, None, verbose=False)
 
         expected_indexes = [0, 2]
         actual_indexes = al_model_manager.get_index(train_labels, label, size)

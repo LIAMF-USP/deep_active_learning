@@ -181,11 +181,14 @@ class RecurrentModel(SentimentAnalysisModel):
         feed_dict = {self.embedding_placeholder: self.pretrained_embeddings}
         sess.run(self.embedding_init, feed_dict=feed_dict)
 
-    def build_graph(self, dataset):
-        super().build_graph(dataset)
-
+    def build_embedding_init(self):
         with tf.name_scope('embedding_initializer'):
             vocab_size = len(self.pretrained_embeddings)
             self.embedding_placeholder = tf.placeholder(
                     tf.float32, shape=(vocab_size, self.config.embed_size))
             self.embedding_init = self.base_embeddings.assign(self.embedding_placeholder)
+
+    def build_graph(self, dataset):
+        super().build_graph(dataset)
+
+        self.build_embedding_init()

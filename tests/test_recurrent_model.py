@@ -18,7 +18,7 @@ class RecurrentModelTest(tf.test.TestCase):
         Config = namedtuple('Config', ['num_units', 'num_classes', 'embed_size'])
         config = Config(3, 2, 3)
 
-        recurrent_model = RecurrentModel(config, embeddings)
+        recurrent_model = RecurrentModel(config, embeddings, verbose=False)
         recurrent_model.add_placeholder()
 
         x_hat = np.array([[1, 2, 3], [3, 2, 0], [4, 0, 0]])
@@ -44,9 +44,12 @@ class RecurrentModelTest(tf.test.TestCase):
             for expected, actual in zip(expected_shape, actual_shape):
                 self.assertEqual(expected, actual)
 
+            recurrent_model.build_embedding_init()
+            recurrent_model.initialize_embeddings(sess)
+
             embedding_data = sess.run(embedding_data, feed_dict=feed)
 
-            self.assertTrue(np.array_equal(expected_embedding, embedding_data))
+            np.testing.assert_array_equal(expected_embedding, embedding_data)
 
     def test_evaluate(self):
         embeddings = [[0, 0, 0],
@@ -63,7 +66,7 @@ class RecurrentModelTest(tf.test.TestCase):
         Config = namedtuple('Config', ['num_units', 'num_classes'])
         config = Config(3, 2)
 
-        recurrent_model = RecurrentModel(config, embeddings)
+        recurrent_model = RecurrentModel(config, embeddings, verbose=False)
         recurrent_model.add_placeholder()
         acc, size = recurrent_model.add_evaluation_op(batch_prediction, batch_labels)
 
