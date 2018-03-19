@@ -50,35 +50,3 @@ class RecurrentModelTest(tf.test.TestCase):
             embedding_data = sess.run(embedding_data, feed_dict=feed)
 
             np.testing.assert_array_equal(expected_embedding, embedding_data)
-
-    def test_evaluate(self):
-        embeddings = [[0, 0, 0],
-                      [1, 2, 3],
-                      [4, 5, 6],
-                      [7, 8, 9],
-                      [10, 11, 12]]
-
-        batch_labels = np.array([0, 0, 1, 0, 1])
-        batch_prediction = np.array([[0.7, 0.1], [0.8, 0.2],
-                                     [0.2, 0.8], [0.7, 0.3],
-                                     [0.8, 0.2]])
-
-        Config = namedtuple('Config', ['num_units', 'num_classes'])
-        config = Config(3, 2)
-
-        recurrent_model = RecurrentModel(config, embeddings, verbose=False)
-        recurrent_model.add_placeholder()
-        acc, size = recurrent_model.add_evaluation_op(batch_prediction, batch_labels)
-
-        expected_accuracy = 4.0
-        expected_size = 5
-
-        with self.test_session() as sess:
-            init = tf.global_variables_initializer()
-            init.run()
-
-            actual_accuracy, actual_size = recurrent_model.batch_evaluate(
-                sess, acc, size)
-
-            self.assertEqual(expected_size, actual_size)
-            self.assertAlmostEqual(expected_accuracy, actual_accuracy)

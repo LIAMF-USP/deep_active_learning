@@ -160,22 +160,22 @@ class RecurrentModel(SentimentAnalysisModel):
 
             return train_op
 
-    def add_evaluation_op(self, logits, labels):
-        with tf.name_scope('validation'):
-            predictions = tf.cast(tf.argmax(logits, axis=1), tf.int32)
-            size = tf.cast(tf.shape(predictions)[0], tf.float32)
-            correct_pred = tf.equal(predictions, tf.cast(labels, tf.int32))
+    def add_evaluation_op(self, predictions, labels, scope, name):
+        acc, acc_update_op = tf.metrics.accuracy(
+            predictions, labels, name=name)
 
-            accuracy = tf.reduce_mean(tf.cast(correct_pred, tf.float32)) * size
+        vars_scope = scope + '/' + name
+        acc_vars = tf.get_collection(
+            tf.GraphKeys.LOCAL_VARIABLES, scope=vars_scope)
 
-            return accuracy, size
+        acc_initializer = tf.variables_initializer(var_list=acc_vars)
 
-    def batch_evaluate(self, sess, accuracy, size):
+        return acc, acc_update_op, acc_initializer
+
+    def batch_evaluate(self, sess, metric_update_op):
         feed = self.create_feed_dict(recurrent_output_dropout=1.0, recurrent_state_dropout=1.0,
                                      embedding_dropout=1.0)
-        accuracy, total = sess.run([accuracy, size], feed_dict=feed)
-
-        return accuracy, total
+        sess.run(metric_update_op, feed_dict=feed)
 
     def initialize_embeddings(self, sess):
         feed_dict = {self.embedding_placeholder: self.pretrained_embeddings}

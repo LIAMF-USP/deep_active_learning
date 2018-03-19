@@ -106,6 +106,10 @@ class InputPipeline:
         self._validation_iterator_op = None
         self._test_iterator_op = None
 
+        self.train_batches = 0
+        self.validation_batches = 0
+        self.test_batches = 0
+
     @property
     def train_iterator(self):
         return self._train_iterator_op
