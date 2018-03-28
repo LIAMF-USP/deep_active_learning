@@ -1,7 +1,7 @@
 import argparse
 import os
 
-from model.model_manager import ActiveLearningModelManager
+from model.al_manager import ActiveLearningModelManager
 from utils.graphs import active_learning_graph
 from utils.pickle import save
 

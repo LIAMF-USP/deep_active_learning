@@ -15,6 +15,8 @@ def get_monte_carlo_metric(metric):
         return Random
     elif metric == 'softmax':
         return Softmax
+    elif metric == 'ceal':
+        return CEAL
 
 
 class MonteCarloEvaluation:
@@ -233,3 +235,12 @@ class Softmax(MonteCarloEvaluation):
         all_preds = self.prediction_samples()
 
         return np.amax(all_preds, axis=1)
+
+
+class CEAL(BaldMC):
+
+    def evaluate(self):
+        all_preds = self.prediction_samples()
+        bald_values = bald(all_preds, self.dropout_entropy, self.num_samples)
+
+        return bald_values, all_preds
