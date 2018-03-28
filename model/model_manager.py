@@ -157,13 +157,13 @@ class ActiveLearningModelManager(ModelManager):
             test_labels.append(label)
             test_sizes.append(size)
 
-        train_ids = np.array(data_ids[:30])
-        train_labels = np.array(data_labels[:30])
-        train_sizes = np.array(data_sizes[:30])
+        train_ids = np.array(data_ids[:train_initial_size])
+        train_labels = np.array(data_labels[:train_initial_size])
+        train_sizes = np.array(data_sizes[:train_initial_size])
 
-        unlabeled_ids = np.array(data_ids[30:])
-        unlabeled_labels = np.array(data_labels[30:])
-        unlabeled_sizes = np.array(data_sizes[30:])
+        unlabeled_ids = np.array(data_ids[train_initial_size:])
+        unlabeled_labels = np.array(data_labels[train_initial_size:])
+        unlabeled_sizes = np.array(data_sizes[train_initial_size:])
 
         size = int(train_initial_size / 2)
         negative_samples = self.get_index(train_labels, 0, size)
