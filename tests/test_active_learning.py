@@ -2,7 +2,7 @@ import unittest
 
 import numpy as np
 
-from model.model_manager import ActiveLearningModelManager
+from model.al_manager import ActiveLearningModelManager
 
 
 class ActiveLearningTest(unittest.TestCase):
