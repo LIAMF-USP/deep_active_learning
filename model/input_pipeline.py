@@ -31,7 +31,7 @@ class SentimentAnalysisDataset:
     def init_dataset(self):
         sentiment_dataset = tf.data.TFRecordDataset(self.data)
         sentiment_dataset = sentiment_dataset.cache()
-        sentiment_dataset = sentiment_dataset.map(self.parser, num_parallel_calls=8)
+        sentiment_dataset = sentiment_dataset.map(self.parser, num_parallel_calls=32)
 
         return sentiment_dataset
 
@@ -62,7 +62,7 @@ class SentimentAnalysisDataset:
             tf.contrib.data.group_by_window(
                 key_func=key_func, reduce_func=reduce_func, window_size=self.batch_size))
 
-        self.sentiment_dataset = sentiment_dataset.prefetch(buffer_size=2 * self.batch_size)
+        self.sentiment_dataset = sentiment_dataset.prefetch(4)
 
         return self.sentiment_dataset
 
