@@ -9,10 +9,10 @@ DATA_DIR="data/aclImdb"
 DATASET_TRAIN="train"
 DATASET_TEST="test"
 
-python dataset_analysis/movie_review_sentence_size.py \
+python experiment_analysis/movie_review_sentence_size.py \
     --data_dir=${DATA_DIR} \
     --dataset_type=${DATASET_TRAIN}
 
-python dataset_analysis/movie_review_sentence_size.py \
+python experiment_analysis/movie_review_sentence_size.py \
     --data_dir=${DATA_DIR} \
     --dataset_type=${DATASET_TEST}

@@ -7,5 +7,5 @@ set -e
 
 DATA_DIR="data/aclImdb"
 
-python dataset_analysis/movie_review_examples_count.py \
+python experiment_analysis/movie_review_examples_count.py \
     --data_dir=${DATA_DIR}
