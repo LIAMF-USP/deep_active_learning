@@ -10,6 +10,7 @@ class RecurrentConfig(Config):
 
         self.num_units = user_args['num_units']
         self.batch_size = user_args['batch_size']
+        self.recurrent_input_dropout = user_args['recurrent_input_dropout']
         self.recurrent_output_dropout = user_args['recurrent_output_dropout']
         self.recurrent_state_dropout = user_args['recurrent_state_dropout']
         self.embedding_dropout = user_args['embedding_dropout']
@@ -26,6 +27,7 @@ class RecurrentModel(SentimentAnalysisModel):
         self.pretrained_embeddings = pretrained_embeddings
 
     def add_placeholder(self):
+        self.recurrent_input_dropout_placeholder = tf.placeholder(tf.float32)
         self.recurrent_output_dropout_placeholder = tf.placeholder(tf.float32)
         self.recurrent_state_dropout_placeholder = tf.placeholder(tf.float32)
         self.embedding_dropout_placeholder = tf.placeholder(tf.float32)
@@ -37,9 +39,12 @@ class RecurrentModel(SentimentAnalysisModel):
         self.labels_placeholder = tf.placeholder(
             tf.int32, shape=[None], name='labels_placeholder')
 
-    def create_feed_dict(self, recurrent_output_dropout=None, recurrent_state_dropout=None,
-                         embedding_dropout=None, data_placeholder=None, sizes_placeholder=None,
-                         labels_placeholder=None):
+    def create_feed_dict(self, recurrent_input_dropout=None, recurrent_output_dropout=None,
+                         recurrent_state_dropout=None, embedding_dropout=None,
+                         data_placeholder=None, sizes_placeholder=None, labels_placeholder=None):
+        if recurrent_input_dropout is None:
+            recurrent_input_dropout = self.config.recurrent_input_dropout
+
         if recurrent_output_dropout is None:
             recurrent_output_dropout = self.config.recurrent_output_dropout
 
@@ -49,7 +54,8 @@ class RecurrentModel(SentimentAnalysisModel):
         if embedding_dropout is None:
             embedding_dropout = self.config.embedding_dropout
 
-        feed_dict = {self.recurrent_output_dropout_placeholder: recurrent_output_dropout,
+        feed_dict = {self.recurrent_input_dropout_placeholder: recurrent_input_dropout,
+                     self.recurrent_output_dropout_placeholder: recurrent_output_dropout,
                      self.recurrent_state_dropout_placeholder: recurrent_state_dropout,
                      self.embedding_dropout_placeholder: embedding_dropout}
 
@@ -95,6 +101,7 @@ class RecurrentModel(SentimentAnalysisModel):
 
                 drop_recurrent_cell = tf.nn.rnn_cell.DropoutWrapper(
                         cell,
+                        input_keep_prob=self.recurrent_input_dropout_placeholder,
                         output_keep_prob=self.recurrent_output_dropout_placeholder,
                         state_keep_prob=self.recurrent_state_dropout_placeholder,
                         variational_recurrent=True,
@@ -173,8 +180,8 @@ class RecurrentModel(SentimentAnalysisModel):
         return acc, acc_update_op, acc_initializer
 
     def batch_evaluate(self, sess, metric_update_op):
-        feed = self.create_feed_dict(recurrent_output_dropout=1.0, recurrent_state_dropout=1.0,
-                                     embedding_dropout=1.0)
+        feed = self.create_feed_dict(recurrent_input_dropout=1.0, recurrent_output_dropout=1.0,
+                                     recurrent_state_dropout=1.0, embedding_dropout=1.0)
         sess.run(metric_update_op, feed_dict=feed)
 
     def initialize_embeddings(self, sess):

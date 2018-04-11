@@ -34,7 +34,7 @@ class RecurrentModelTest(tf.test.TestCase):
             init = tf.global_variables_initializer()
             init.run()
 
-            feed = recurrent_model.create_feed_dict(1.0, 1.0, 1.0)
+            feed = recurrent_model.create_feed_dict(1.0, 1.0, 1.0, 1.0)
 
             expected_shape = expected_embedding.shape
             actual_shape = tf.shape(embedding_data)

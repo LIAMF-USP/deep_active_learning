@@ -134,6 +134,11 @@ def create_argument_parser():
                         type=int,
                         help='The number of classification classes')
 
+    parser.add_argument('-lid',
+                        '--recurrent-input-dropout',
+                        type=float,
+                        help='Dropout value for inputs in the network')
+
     parser.add_argument('-lod',
                         '--recurrent-output-dropout',
                         type=float,

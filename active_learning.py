@@ -115,6 +115,11 @@ def create_argument_parser():
                         type=int,
                         help='The number of classification classes')
 
+    parser.add_argument('-lid',
+                        '--recurrent-input-dropout',
+                        type=float,
+                        help='Dropout value for inputs in the network')
+
     parser.add_argument('-lod',
                         '--recurrent-output-dropout',
                         type=float,
@@ -262,6 +267,7 @@ def run_active_learning(**user_args):
         'use_validation': user_args['use_validation'],
         'use_mc_dropout': False,
         'num_units': user_args['num_units'],
+        'recurrent_input_dropout': user_args['recurrent_input_dropout'],
         'recurrent_output_dropout': user_args['recurrent_output_dropout'],
         'recurrent_state_dropout': user_args['recurrent_state_dropout'],
         'embedding_dropout': user_args['embedding_dropout'],
