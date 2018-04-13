@@ -14,6 +14,7 @@ class ModelManager:
     def __init__(self, model_params, verbose=True):
         self.model_params = model_params
         self.sess = None
+        self.recurrent_model = None
         self.verbose = verbose
 
     def create_dataset(self):
@@ -43,7 +44,7 @@ class ModelManager:
         save_path = os.path.join(graphs_dir, save_name)
         accuracy_graph(train_accuracies, val_accuracies, save_path)
 
-    def run_model(self):
+    def create_model(self):
         print('Creating dataset...')
         self.input_pipeline = self.create_dataset()
         print('Calculating number of batches...')
@@ -64,7 +65,7 @@ class ModelManager:
         self.recurrent_model = RecurrentModel(
             recurrent_config, embedding_matrix, self.verbose)
 
-        saved_model_path = self.model_params['saved_model_folder']
+        self.saved_model_path = self.model_params['saved_model_folder']
 
         self.sess = tf.Session()
 
@@ -73,10 +74,15 @@ class ModelManager:
         init = tf.global_variables_initializer()
         self.sess.run(init)
 
+    def run_model(self):
+        if self.recurrent_model is None:
+            print('Creating model ...')
+            self.create_model()
+
         try:
             (best_accuracy, train_accuracies,
                 val_accuracies, test_accuracy) = self.recurrent_model.fit(
-                    self.sess, self.input_pipeline, saved_model_path)
+                    self.sess, self.input_pipeline, self.saved_model_path)
         except tf.errors.InvalidArgumentError:
             print('Invalid set of arguments ... ')
             train_accuracies, val_accuracies = [], []
@@ -92,3 +98,4 @@ class ModelManager:
     def reset_graph(self):
         self.sess.close()
         tf.reset_default_graph()
+        self.recurrent_model = None

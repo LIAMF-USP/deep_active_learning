@@ -131,7 +131,6 @@ class ActiveLearningModelManager(ModelManager):
             uncertainty_metric, pool_ids, pool_sizes, num_classes, num_passes)
         new_samples = unlabeled_uncertainty.argsort()[-num_queries:][::-1]
         np.random.shuffle(new_samples)
-        self.reset_graph()
 
         pooled_id = pool_ids[new_samples]
         pooled_labels = pool_labels[new_samples]
@@ -193,6 +192,9 @@ class ActiveLearningModelManager(ModelManager):
         elif metric == 'ceal':
             return random.seed(6001)
 
+    def manage_graph(self):
+        self.reset_graph()
+
     def run_cycle(self):
         self.set_random_seeds()
 
@@ -228,6 +230,7 @@ class ActiveLearningModelManager(ModelManager):
 
             train_data_sizes.append(len(self.labeled_dataset[0]))
             sample_index = self.update_labeled_dataset(pool_ids, pool_labels, pool_sizes)
+            self.manage_graph()
 
             (delete_id_sample, delete_labels_sample,
              delete_sizes_sample) = self.remove_data_from_dataset(
@@ -302,7 +305,6 @@ class CealModelManager(ActiveLearningModelManager):
         certain_samples = unlabeled_uncertainty.argsort()[num_queries:][::-1]
 
         np.random.shuffle(uncertain_samples)
-        self.reset_graph()
 
         return uncertain_samples, certain_samples, pred_counts
 
@@ -332,3 +334,8 @@ class CealModelManager(ActiveLearningModelManager):
         self.labeled_dataset = (labeled_id, labeled_labels, labeled_sizes)
 
         return uncertain_samples
+
+
+class ContinuousActiveLearning(ActiveLearningModelManager):
+    def manage_graph(self):
+        pass
