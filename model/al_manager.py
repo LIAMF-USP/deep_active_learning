@@ -220,13 +220,13 @@ class ActiveLearningModelManager(ModelManager):
             pool_ids, pool_labels, pool_sizes, pool_indexes = self.select_samples()
             pool_dataset = (pool_ids, pool_labels, pool_sizes)
 
-            self.clear_train_dataset()
             print('Train data size: {}'.format(len(self.labeled_dataset[0])))
             self.model_params['train_data'] = self.labeled_dataset
             self.model_params['validation_data'] = pool_dataset
 
             _, _, _, test_accuracy = self.run_model()
             test_accuracies.append(test_accuracy)
+            self.clear_train_dataset()
 
             train_data_sizes.append(len(self.labeled_dataset[0]))
             sample_index = self.update_labeled_dataset(pool_ids, pool_labels, pool_sizes)
@@ -259,6 +259,12 @@ class ActiveLearningModelManager(ModelManager):
 
 
 class CealModelManager(ActiveLearningModelManager):
+    def create_initial_dataset(self):
+        labeled_dataset, unlabeled_dataset, test_dataset = super().create_initial_dataset()
+        self.prev_dataset = labeled_dataset
+
+        return (labeled_dataset, unlabeled_dataset, test_dataset)
+
     def unlabeled_uncertainty(self, uncertainty_metric, pool_ids, pool_sizes,
                               num_classes, num_samples=10):
         MonteCarlo = get_monte_carlo_metric(uncertainty_metric)
@@ -276,9 +282,8 @@ class CealModelManager(ActiveLearningModelManager):
 
         print('Getting prediction samples ...')
         ratio, all_preds = monte_carlo_evaluation.evaluate()
-        pred_counts = monte_carlo_evaluation.monte_carlo_samples_count(all_preds)
 
-        return ratio, pred_counts
+        return ratio, all_preds
 
     def select_samples(self):
         sample_size = self.active_learning_params['sample_size']
@@ -298,40 +303,55 @@ class CealModelManager(ActiveLearningModelManager):
         uncertainty_metric = 'ceal'
         num_classes = self.model_params['num_classes']
 
-        unlabeled_uncertainty, pred_counts = self.unlabeled_uncertainty(
+        unlabeled_uncertainty, all_preds = self.unlabeled_uncertainty(
             uncertainty_metric, pool_ids, pool_sizes, num_classes, num_passes)
 
         uncertain_samples = unlabeled_uncertainty.argsort()[-num_queries:][::-1]
-        certain_samples = unlabeled_uncertainty.argsort()[num_queries:][::-1]
+
+        certain_samples = []
+        for index in unlabeled_uncertainty.argsort():
+            value = unlabeled_uncertainty[index]
+            if value > 0.05:
+                break
+
+            certain_samples.append(index)
+        certain_samples = np.array(certain_samples)
 
         np.random.shuffle(uncertain_samples)
+        random.shuffle(certain_samples)
 
-        return uncertain_samples, certain_samples, pred_counts
+        return uncertain_samples, certain_samples, all_preds
 
     def clear_train_dataset(self):
         self.labeled_dataset = self.prev_dataset
 
     def update_labeled_dataset(self, pool_ids, pool_labels, pool_sizes):
-        uncertain_samples, certain_samples, pred_counts = self.select_new_examples(
+        uncertain_samples, certain_samples, all_preds = self.select_new_examples(
             pool_ids, pool_labels, pool_sizes)
 
         uncertain_id = pool_ids[uncertain_samples]
         uncertain_labels = pool_labels[uncertain_samples]
         uncertain_sizes = pool_sizes[uncertain_samples]
 
-        labeled_id, labeled_labels, labeled_sizes = self.update_labeled_dataset(
+        labeled_id, labeled_labels, labeled_sizes = self.new_labeled_dataset(
             uncertain_id, uncertain_labels, uncertain_sizes)
         self.labeled_dataset = (labeled_id, labeled_labels, labeled_sizes)
         self.prev_dataset = self.labeled_dataset
 
-        random.shuffle(certain_samples)
         certain_id = pool_ids[certain_samples]
-        certain_labels = np.array([label for _, label in pred_counts[certain_samples]])
+
+        labels = []
+        for i in certain_samples:
+            labels.append(all_preds[i].argmax())
+        certain_labels = np.array(labels)
+
         certain_sizes = pool_sizes[certain_samples]
 
-        labeled_id, labeled_labels, labeled_sizes = self.update_labeled_dataset(
+        labeled_id, labeled_labels, labeled_sizes = self.new_labeled_dataset(
             certain_id, certain_labels, certain_sizes)
         self.labeled_dataset = (labeled_id, labeled_labels, labeled_sizes)
+        print('Original dataset size: {}'.format(len(self.prev_dataset[0])))
+        print('Ceal dataset size: {}'.format(len(self.labeled_dataset[0])))
 
         return uncertain_samples
 

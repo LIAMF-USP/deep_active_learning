@@ -86,6 +86,26 @@ class MonteCarloEvaluation:
 
         return predictions
 
+
+class VariationRationMC(MonteCarloEvaluation):
+
+    def initialize_predictions(self):
+        return np.zeros(shape=(self.data_batch.shape[0], self.num_samples))
+
+    def update_predictions(self, predictions, index):
+        prediction = self.sess.run(
+            self.model.predictions,
+            feed_dict=self.feed_dict)
+
+        predictions[:, index] = prediction
+
+    def evaluate(self):
+        all_preds = self.prediction_samples()
+        mc_counts = self.monte_carlo_samples_count(all_preds)
+        variation_ratios = np.array(variation_ratio(mc_counts))
+
+        return variation_ratios
+
     def monte_carlo_samples_count(self, all_preds):
         mc_counts = []
 
@@ -108,26 +128,6 @@ class MonteCarloEvaluation:
         correct_pred = np.equal(predictions, self.labels_batch)
 
         return np.mean(correct_pred)
-
-
-class VariationRationMC(MonteCarloEvaluation):
-
-    def initialize_predictions(self):
-        return np.zeros(shape=(self.data_batch.shape[0], self.num_samples))
-
-    def update_predictions(self, predictions, index):
-        prediction = self.sess.run(
-            self.model.predictions,
-            feed_dict=self.feed_dict)
-
-        predictions[:, index] = prediction
-
-    def evaluate(self):
-        all_preds = self.prediction_samples()
-        mc_counts = self.monte_carlo_samples_count(all_preds)
-        variation_ratios = np.array(variation_ratio(mc_counts))
-
-        return variation_ratios
 
 
 class EntropyMC(MonteCarloEvaluation):
