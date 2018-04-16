@@ -6,9 +6,14 @@
 set -e
 
 DATA_DIR="data/"
-DATASET_URL="http://ai.stanford.edu/~amaas/data/sentiment/aclImdb_v1.tar.gz"
-DATASET_DIR="aclImdb/"
-DATASET_TARBALL="aclImdb_v1.tar.gz"
+
+ACL_DATASET_URL="http://ai.stanford.edu/~amaas/data/sentiment/aclImdb_v1.tar.gz"
+ACL_DATASET_DIR="aclImdb/"
+ACL_DATASET_TARBALL="aclImdb_v1.tar.gz"
+
+SUBJ_DATASET_URL="http://www.cs.cornell.edu/people/pabo/movie-review-data/rotten_imdb.tar.gz"
+SUBJ_DATASET_DIR="subj_dataset"
+SUBJ_DATASET_TARBALL="rotten_imdb.tar.gz"
 
 GLOVE_URL="http://nlp.stanford.edu/data/glove.6B.zip"
 GLOVE_ZIP="glove.6B.zip"
@@ -32,12 +37,24 @@ fi
 
 cd "$DATA_DIR"
 
-if [ ! -d "$DATASET_DIR" ]; then
-    wget "$DATASET_URL"
-    tar xvf "$DATASET_TARBALL"
-    rm "$DATASET_TARBALL"
+if [ ! -d "$ACL_DATASET_DIR" ]; then
+    wget "$ACL_DATASET_URL"
+    tar xvf "$ACL_DATASET_TARBALL"
+    rm "$ACL_DATASET_TARBALL"
 else
-    echo "Dataset already downloaded!"
+    echo "ACL Dataset already downloaded!"
+fi
+
+if [ ! -d "$SUBJ_DATASET_DIR" ]; then
+    mkdir "$SUBJ_DATASET_DIR"
+    cd "$SUBJ_DATASET_DIR"
+
+    wget "$SUBJ_DATASET_URL"
+    tar xvf "$SUBJ_DATASET_TARBALL"
+    rm "$SUBJ_DATASET_TARBALL"
+    cd ..
+else
+    echo "Subjective Dataset already downloaded!"
 fi
 
 if [ ! -d "$GLOVE_DIR" ]; then
