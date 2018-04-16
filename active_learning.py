@@ -1,7 +1,7 @@
 import argparse
 import os
 
-from model.al_manager import ActiveLearningModelManager
+from model.al_manager import get_al_manager
 from utils.graphs import active_learning_graph
 from utils.pickle import save
 
@@ -165,6 +165,11 @@ def create_argument_parser():
                         type=bool_arguments,
                         help='Define if an accuracy graph should be saved')
 
+    parser.add_argument('-alt',
+                        '--active-learning-type',
+                        type=str,
+                        help='Define the type of active learning technique to use')
+
     parser.add_argument('-um',
                         '--uncertainty-metric',
                         type=str,
@@ -267,8 +272,17 @@ def run_active_learning(**user_args):
         'num_buckets': user_args['num_buckets']
     }
 
-    al_model_manager = ActiveLearningModelManager(
+    al_type = user_args['active_learning_type']
+    al_technique = get_al_manager(al_type)
+
+    al_model_manager = al_technique(
         model_params, active_learning_params, verbose=False)
+
+    uncertainty_metric = user_args['uncertainty_metric']
+    uncertainty_metric = uncertainty_metric.replace('_', ' ').title()
+
+    print('Running {} Active Learning with {} metric'.format(
+        al_type.title(), uncertainty_metric))
     train_data, test_accuracies = al_model_manager.run_cycle()
 
     save_graph_path = user_args['save_graph_path']

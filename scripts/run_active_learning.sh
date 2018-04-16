@@ -56,6 +56,7 @@ INITIAL_TRAINING_SIZE=225
 SAVE_DATA_FOLDER='data/active_learning'
 MAX_LEN=600
 
+ACTIVE_LEARNING_TYPE="ceal"
 UNCERTAINTY_METRIC="bald"
 
 for i in {1..3}
@@ -92,6 +93,7 @@ do
       --num-buckets=${NUM_BUCKETS} \
       --use-test=${USE_TEST} \
       --save-graph=${SAVE_GRAPH} \
+      --active-learning-type=${ACTIVE_LEARNING_TYPE} \
       --uncertainty-metric=${UNCERTAINTY_METRIC} \
       --num-rounds=${NUM_ROUNDS} \
       --sample-size=${SAMPLE_SIZE} \

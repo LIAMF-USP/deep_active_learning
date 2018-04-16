@@ -8,6 +8,15 @@ from model.monte_carlo_evaluation import get_monte_carlo_metric
 from preprocessing.dataset import load
 
 
+def get_al_manager(al_type):
+    if al_type == 'common':
+        return ActiveLearningModelManager
+    elif al_type == 'continuous':
+        return ContinuousActiveLearning
+    elif al_type == 'ceal':
+        return CealModelManager
+
+
 class ActiveLearningModelManager(ModelManager):
 
     def __init__(self, model_params, active_learning_params, verbose):
@@ -208,11 +217,6 @@ class ActiveLearningModelManager(ModelManager):
         test_accuracies, train_data_sizes = [], []
         self.model_params['num_validation'] = self.active_learning_params['sample_size']
         self.model_params['test_data'] = test_dataset
-
-        uncertainty_metric = self.active_learning_params['uncertainty_metric']
-        uncertainty_metric = uncertainty_metric.replace('_', ' ').title()
-
-        print('Running Active Learning with {} metric'.format(uncertainty_metric))
 
         for i in range(self.active_learning_params['num_rounds']):
             print('Starting round {}'.format(i))
