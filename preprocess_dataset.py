@@ -1,6 +1,7 @@
 import argparse
 
 from preprocessing.acl_dataset import get_acl_dataset
+from preprocessing.subj_dataset import get_subj_dataset
 
 
 def create_argument_parser():
@@ -98,6 +99,8 @@ def main():
 
     if dataset == 'acl':
         dataset_processor = get_acl_dataset(user_args['dataset_type'])
+    elif dataset == 'subj':
+        dataset_processor = get_subj_dataset(user_args['dataset_type'])
 
     movie_review_dataset = dataset_processor(
         train_save_path=train_save_path,
