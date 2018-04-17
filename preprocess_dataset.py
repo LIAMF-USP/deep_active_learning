@@ -1,12 +1,17 @@
 import argparse
 
-from preprocessing.dataset import get_dataset
+from preprocessing.acl_dataset import get_acl_dataset
 
 
 def create_argument_parser():
     parser = argparse.ArgumentParser()
 
     parser.add_argument('-d',
+                        '--dataset',
+                        type=str,
+                        help='Which dataset to pre-process')
+
+    parser.add_argument('-dd',
                         '--data-dir',
                         type=str,
                         help='The location of the Large Movie Review Dataset')
@@ -80,6 +85,7 @@ def main():
     validation_save_path = user_args['validation_save_path']
     test_save_path = user_args['test_save_path']
 
+    dataset = user_args['dataset']
     data_dir = user_args['data_dir']
     data_output_dir = user_args['data_output_dir']
     output_dir = user_args['output_dir']
@@ -90,9 +96,10 @@ def main():
     embedding_wordindex_path = user_args['embedding_wordindex_path']
     sentence_size = user_args['sentence_size']
 
-    dataset = get_dataset(user_args['dataset_type'])
+    if dataset == 'acl':
+        dataset_processor = get_acl_dataset(user_args['dataset_type'])
 
-    movie_review_dataset = dataset(
+    movie_review_dataset = dataset_processor(
         train_save_path=train_save_path,
         validation_save_path=validation_save_path,
         test_save_path=test_save_path,

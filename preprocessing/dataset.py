@@ -1,40 +1,24 @@
 import os
-import random
 
 from preprocessing.format_dataset import (remove_html_from_text, remove_url_from_text,
                                           remove_special_characters_from_text, to_lower,
                                           create_unique_apostrophe, add_space_between_characters,
-                                          sentence_to_id_list, SentenceTFRecord, get_vocab)
+                                          SentenceTFRecord, sentence_to_id_list, get_vocab)
 from word_embedding.word_embedding import get_embedding
 from utils.progress_bar import Progbar
 from utils.pickle import load, save
 
 
-POS_LABEL = 0
-NEG_LABEL = 1
-
-
-def get_dataset(dataset_type):
-
-    if dataset_type == 'debug':
-        return DebugMovieReviewDataset
-    elif dataset_type == 'active_learning':
-        return ActiveLearningDataset
-
-    return MovieReviewDataset
-
-
-class MovieReviewDataset:
+class Dataset:
 
     def __init__(self, train_save_path, validation_save_path, test_save_path,
-                 data_dir, data_output_dir, output_dir, embedding_file, embed_size,
+                 data_dir, output_dir, embedding_file, embed_size,
                  embedding_path, embedding_wordindex_path, sentence_size=None):
         self.train_save_path = train_save_path
         self.validation_save_path = validation_save_path
         self.test_save_path = test_save_path
 
         self.data_dir = data_dir
-        self.data_output_dir = data_output_dir
         self.output_dir = output_dir
 
         self.embedding_file = embedding_file
@@ -44,108 +28,119 @@ class MovieReviewDataset:
 
         self.sentence_size = sentence_size
 
-        self.train_reviews = None
-        self.validation_reviews = None
-        self.test_reviews = None
-        self.format_reviews = False
+        self.train = None
+        self.validation = None
+        self.test = None
+        self.format_data = False
 
-        self.save_formatted_reviews = True
+        self.save_formatted_data = True
         self.should_load_datasets = True
         self.create_validation_dataset = True
 
+    def preprocess_text_data(self, text_data):
+        formatted_text = remove_html_from_text(text_data)
+        formatted_text = remove_url_from_text(formatted_text)
+        formatted_text = create_unique_apostrophe(formatted_text)
+        formatted_text = add_space_between_characters(formatted_text)
+        formatted_text = remove_special_characters_from_text(formatted_text)
+        return to_lower(formatted_text)
+
     def load_datasets(self):
         if self.train_save_path and os.path.exists(self.train_save_path):
-            print('Loading formatted train reviews ...')
-            self.train_reviews = load(self.train_save_path)
+            print('Loading formatted train data ...')
+            self.train = load(self.train_save_path)
 
         if self.validation_save_path and os.path.exists(self.validation_save_path):
-            print('Loading formatted validation reviews ...')
-            self.validation_reviews = load(self.validation_save_path)
+            print('Loading formatted validation data ...')
+            self.validation = load(self.validation_save_path)
 
         if self.test_save_path and os.path.exists(self.test_save_path):
-            print('Loading formatted test reviews ...')
-            self.test_reviews = load(self.test_save_path)
+            print('Loading formatted test data ...')
+            self.test = load(self.test_save_path)
 
-    def prepare_reviews(self, reviews, embedding, word_index, review_type):
-        print('Find and replacing unknown words for {} reviews...'.format(review_type))
-        progbar = Progbar(target=len(reviews))
-        reviews = embedding.handle_unknown_words(
-            reviews, sentence_size=self.sentence_size, progbar=progbar)
+    def prepare_data(self, data, embedding, word_index, review_type):
+        print('Find and replacing unknown words for {} data...'.format(review_type))
+        progbar = Progbar(target=len(data))
+        data = embedding.handle_unknown_words(
+            data, sentence_size=self.sentence_size, progbar=progbar)
 
-        print('Transforming {} reviews into list of ids'.format(review_type))
-        reviews = self.transform_sentences(reviews, word_index)
+        print('Transforming {} data into list of ids'.format(review_type))
+        data = self.transform_sentences(data, word_index)
 
-        print('Saving {} formatted reviews using pickle'.format(review_type))
+        print('Saving {} formatted data using pickle'.format(review_type))
         output_path = os.path.join(self.output_dir, review_type, '{}.pkl'.format(review_type))
-        save(reviews, output_path)
+        save(data, output_path)
 
-        print('Transforming {} reviews into tfrecords'.format(review_type))
-        self.create_tfrecords(reviews, review_type)
+        print('Transforming {} data into tfrecords'.format(review_type))
+        self.create_tfrecords(data, review_type)
 
         print()
 
-    def get_reviews(self):
+    def create_train_dataset(self):
+        raise NotImplementedError
+
+    def create_test_dataset(self):
+        raise NotImplementedError
+
+    def get_data(self):
         if self.should_load_datasets:
             self.load_datasets()
 
-        if not self.train_reviews:
-            print('Creating train review ...')
-            pos_train_reviews, neg_train_reviews = self.apply_data_preprocessing('train')
-            self.train_reviews = self.create_unified_dataset(pos_train_reviews, neg_train_reviews)
+        if not self.train:
+            print('Creating train dataset ...')
+            self.train = self.create_train_dataset()
 
-            if not self.validation_reviews:
-                print('Creating validation reviews')
+            if not self.validation:
+                print('Creating validation data')
                 if self.create_validation_dataset:
-                    self.train_reviews, self.validation_reviews = self.split_reviews(
-                            self.train_reviews)
+                    self.train, self.validation = self.split_data(self.train)
 
-            if self.save_formatted_reviews:
-                print('Saving train reviews ...')
-                save(self.train_reviews, self.train_save_path)
+            if self.save_formatted_data:
+                print('Saving train data ...')
+                save(self.train, self.train_save_path)
 
-                if self.create_validation_dataset and self.validation_reviews:
-                    print('Saving validation reviews ...')
-                    save(self.validation_reviews, self.validation_save_path)
+                if self.create_validation_dataset and self.validation:
+                    print('Saving validation data ...')
+                    save(self.validation, self.validation_save_path)
 
-        if not self.test_reviews:
-            print('Creating test reviews ...')
-            pos_test_reviews, neg_test_reviews = self.apply_data_preprocessing('test')
-            self.test_reviews = self.create_unified_dataset(pos_test_reviews, neg_test_reviews)
+        if not self.test:
+            print('Creating test data ...')
+            self.test = self.create_test_dataset()
 
-            if self.save_formatted_reviews:
-                print('Saving test reviews ...')
-                save(self.test_reviews, self.test_save_path)
+            if self.save_formatted_data:
+                print('Saving test data ...')
+                save(self.test, self.test_save_path)
 
     def create_dataset(self):
-        if not self.train_reviews and not self.validation_reviews and not self.test_reviews:
-            self.format_reviews = True
+        if not self.train and not self.validation and not self.test:
+            self.format_data = True
 
         self.make_dirs()
-        self.get_reviews()
+        self.get_data()
 
         vocab = self.get_vocabulary()
 
         embedding = self.load_embeddings(vocab)
         word_index, matrix, embedding_vocab = embedding.get_word_embedding()
 
-        self.prepare_reviews(self.train_reviews, embedding, word_index, 'train')
+        self.prepare_data(self.train, embedding, word_index, 'train')
         if self.create_validation_dataset:
-            self.prepare_reviews(self.validation_reviews, embedding, word_index, 'val')
-        self.prepare_reviews(self.test_reviews, embedding, word_index, 'test')
+            self.prepare_data(self.validation, embedding, word_index, 'val')
+        self.prepare_data(self.test, embedding, word_index, 'test')
 
-    def create_tfrecords(self, reviews, dataset_type):
+    def create_tfrecords(self, data, dataset_type):
         output_path = os.path.join(self.output_dir, dataset_type,
                                    '{}.tfrecord'.format(dataset_type))
-        progbar = Progbar(target=len(reviews))
+        progbar = Progbar(target=len(data))
 
-        sentence_tfrecord = SentenceTFRecord(reviews, output_path, progbar)
+        sentence_tfrecord = SentenceTFRecord(data, output_path, progbar)
         sentence_tfrecord.parse_sentences()
 
-    def transform_sentences(self, reviews, word_index):
+    def transform_sentences(self, data, word_index):
         transformed_sentences = []
-        progbar = Progbar(target=len(reviews))
+        progbar = Progbar(target=len(data))
 
-        for index, (review, label) in enumerate(reviews):
+        for index, (review, label) in enumerate(data):
             review_id_list = sentence_to_id_list(review, word_index)
             size = len(review_id_list)
 
@@ -164,96 +159,18 @@ class MovieReviewDataset:
 
     def get_vocabulary(self):
         print('Loading vocabulary...')
-        vocab = get_vocab(self.train_reviews)
+        vocab = get_vocab(self.train)
         return vocab
 
-    def split_reviews(self, train_reviews, percent=0.1):
-        num_reviews = int(len(train_reviews) * percent)
+    def split_data(self, train, percent=0.1):
+        num_data = int(len(train) * percent)
 
-        validation_reviews = train_reviews[0:num_reviews]
-        train_reviews = train_reviews[num_reviews:]
+        validation = train[0:num_data]
+        train = train[num_data:]
 
-        return train_reviews, validation_reviews
-
-    def add_label_to_dataset(self, dataset, label):
-        return [(data, label) for data in dataset]
-
-    def create_unified_dataset(self, pos_reviews, neg_reviews):
-        pos_reviews = self.add_label_to_dataset(pos_reviews, POS_LABEL)
-        neg_reviews = self.add_label_to_dataset(neg_reviews, NEG_LABEL)
-
-        all_reviews = pos_reviews + neg_reviews
-
-        random.shuffle(all_reviews)
-
-        return all_reviews
-
-    def preprocess_review_text(self, review_text):
-        formatted_text = remove_html_from_text(review_text)
-        formatted_text = remove_url_from_text(formatted_text)
-        formatted_text = create_unique_apostrophe(formatted_text)
-        formatted_text = add_space_between_characters(formatted_text)
-        formatted_text = remove_special_characters_from_text(formatted_text)
-        return to_lower(formatted_text)
-
-    def preprocess_review_files(self, dataset_path, output_dataset_path, review_type):
-        dataset_sentiment_type = os.path.join(dataset_path, review_type)
-        output_sentiment_type = os.path.join(output_dataset_path, review_type)
-
-        review_files = os.listdir(dataset_sentiment_type)
-        num_review_files = len(review_files)
-        formatted_review_texts = []
-
-        print('Formatting {} texts'.format(review_type))
-        progbar = Progbar(target=num_review_files)
-
-        for index, review in enumerate(review_files):
-            original_review = os.path.join(dataset_sentiment_type, review)
-            with open(original_review, 'r') as review_file:
-                review_text = review_file.read()
-
-            formatted_text = self.preprocess_review_text(review_text)
-            formatted_review_texts.append(formatted_text)
-
-            output_review = os.path.join(output_sentiment_type, review)
-            with open(output_review, 'w') as review_file:
-                review_file.write(formatted_text)
-
-            progbar.update(index + 1, [])
-        print()
-
-        return formatted_review_texts
-
-    def preprocess_files(self, dataset_path, output_dataset_path):
-        pos_reviews = self.preprocess_review_files(dataset_path, output_dataset_path, 'pos')
-        neg_reviews = self.preprocess_review_files(dataset_path, output_dataset_path, 'neg')
-
-        return pos_reviews, neg_reviews
-
-    def make_output_dirs(self, dataset_type):
-        output_dataset_path = os.path.join(self.data_output_dir, dataset_type)
-        if not os.path.exists(output_dataset_path):
-            os.makedirs(output_dataset_path)
-
-        output_pos = os.path.join(output_dataset_path, 'pos')
-        if not os.path.exists(output_pos):
-            os.makedirs(output_pos)
-
-        output_neg = os.path.join(output_dataset_path, 'neg')
-        if not os.path.exists(output_neg):
-            os.makedirs(output_neg)
-
-    def apply_data_preprocessing(self, dataset_type):
-        dataset_path = os.path.join(self.data_dir, dataset_type)
-        output_dataset_path = os.path.join(self.data_output_dir, dataset_type)
-
-        return self.preprocess_files(dataset_path, output_dataset_path)
+        return train, validation
 
     def make_dirs(self):
-
-        if self.format_reviews:
-            self.make_output_dirs('train')
-            self.make_output_dirs('test')
 
         if not os.path.exists(self.output_dir):
             os.makedirs(self.output_dir)
@@ -269,33 +186,3 @@ class MovieReviewDataset:
         test_path = os.path.join(self.output_dir, 'test')
         if not os.path.exists(test_path):
             os.makedirs(test_path)
-
-
-class DebugMovieReviewDataset(MovieReviewDataset):
-
-    def __init__(self, train_save_path, validation_save_path, test_save_path,
-                 data_dir, data_output_dir, output_dir, embedding_file, embed_size,
-                 embedding_path, embedding_wordindex_path, sentence_size=None):
-        super().__init__(train_save_path, validation_save_path, test_save_path, data_dir,
-                         data_output_dir, output_dir, embedding_file, embed_size,
-                         embedding_path, embedding_wordindex_path, sentence_size)
-        self.save_formatted_reviews = False
-
-    def get_reviews(self):
-        print('Creating DEBUG dataset')
-        super().get_reviews()
-
-        self.train_reviews = self.train_reviews[0:500]
-        self.validation_reviews = self.validation_reviews[0:100]
-
-
-class ActiveLearningDataset(MovieReviewDataset):
-    def __init__(self, train_save_path, validation_save_path, test_save_path,
-                 data_dir, data_output_dir, output_dir, embedding_file, embed_size,
-                 embedding_path, embedding_wordindex_path, sentence_size=None):
-        super().__init__(train_save_path, validation_save_path, test_save_path, data_dir,
-                         data_output_dir, output_dir, embedding_file, embed_size,
-                         embedding_path, embedding_wordindex_path, sentence_size)
-        self.save_formatted_reviews = False
-        self.should_load_datasets = False
-        self.create_validation_dataset = False

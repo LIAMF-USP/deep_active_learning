@@ -1,12 +1,12 @@
 import unittest
 
-from preprocessing.dataset import MovieReviewDataset
+from preprocessing.acl_dataset import ACLMovieReviewDataset
 
 
 class PreprocessingDatasetTest(unittest.TestCase):
 
     def test_create_validation_set(self):
-        movie_review_dataset = MovieReviewDataset(
+        movie_review_dataset = ACLMovieReviewDataset(
             train_save_path=None,
             validation_save_path=None,
             test_save_path=None,
@@ -20,7 +20,7 @@ class PreprocessingDatasetTest(unittest.TestCase):
             sentence_size=None)
         all_reviews = [(value, 0) for value in range(40)]
 
-        all_reviews, validation_reviews = movie_review_dataset.split_reviews(all_reviews)
+        all_reviews, validation_reviews = movie_review_dataset.split_data(all_reviews)
 
         expected_review_len = 36
         expected_val_len = 4
