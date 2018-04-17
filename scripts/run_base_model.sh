@@ -5,17 +5,17 @@ set -e
 #usage
 #./script/run_base_model.sh
 
-GLOVE_TRAIN_FILE="data/glove/aclImdb_formatted/train/train.tfrecord"
-GLOVE_VALIDATION_FILE="data/glove/aclImdb_formatted/val/val.tfrecord"
-GLOVE_TEST_FILE="data/glove/aclImdb_formatted/test/test.tfrecord"
+GLOVE_TRAIN_FILE="data/glove/acl/data/train/train.tfrecord"
+GLOVE_VALIDATION_FILE="data/glove/acl/data/val/val.tfrecord"
+GLOVE_TEST_FILE="data/glove/acl/data/test/test.tfrecord"
 
-FASTTEXT_TRAIN_FILE="data/fasttext/aclImdb_formatted/train/train.tfrecord"
-FASTTEXT_VALIDATION_FILE="data/fasttext/aclImdb_formatted/val/val.tfrecord"
-FASTTEXT_TEST_FILE="data/fasttext/aclImdb_formatted/test/test.tfrecord"
+FASTTEXT_TRAIN_FILE="data/fasttext/acl/data/train/train.tfrecord"
+FASTTEXT_VALIDATION_FILE="data/fasttext/acl/data/val/val.tfrecord"
+FASTTEXT_TEST_FILE="data/fasttext/acl/data/test/test.tfrecord"
 
-WORD2VEC_TRAIN_FILE="data/word2vec/aclImdb_formatted/train/train.tfrecord"
-WORD2VEC_VALIDATION_FILE="data/word2vec/aclImdb_formatted/val/val.tfrecord"
-WORD2VEC_TEST_FILE="data/word2vec/aclImdb_formatted/test/test.tfrecord"
+WORD2VEC_TRAIN_FILE="data/word2vec/acl/data/train/train.tfrecord"
+WORD2VEC_VALIDATION_FILE="data/word2vec/acl/data/val/val.tfrecord"
+WORD2VEC_TEST_FILE="data/word2vec/acl/data/test/test.tfrecord"
 
 SAVED_MODEL_FOLDER="saved_models"
 SHOULD_SAVE=0

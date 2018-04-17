@@ -5,8 +5,8 @@ set -e
 #usage
 #./script/run_active_learning.sh
 
-AL_TRAIN_FILE="data/glove/aclImdb_formatted/train/train.pkl"
-AL_TEST_FILE="data/glove/aclImdb_formatted/test/test.pkl"
+AL_TRAIN_FILE="data/glove/acl/data/train/train.pkl"
+AL_TEST_FILE="data/glove/acl/data/test/test.pkl"
 
 SAVED_MODEL_FOLDER="saved_models"
 
@@ -17,7 +17,7 @@ MODEL_NAME='base_model'
 TENSORBOARD_DIR='tensorboard_logs'
 
 GLOVE_EMBEDDING_FILE="data/glove/glove.6B.100d.txt"
-GLOVE_EMBEDDING_PICKLE="data/glove/glove.pkl"
+GLOVE_EMBEDDING_PICKLE="data/glove/acl/glove.pkl"
 GLOVE_EMBED_SIZE=100
 
 GRAPHS_DIR='graphs'
