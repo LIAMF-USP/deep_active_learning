@@ -28,7 +28,7 @@ MODEL_NAME='base_model'
 TENSORBOARD_DIR='tensorboard_logs'
 
 GLOVE_EMBEDDING_FILE="data/glove/glove.6B.100d.txt"
-GLOVE_EMBEDDING_PICKLE="data/glove/glove.pkl"
+GLOVE_EMBEDDING_PICKLE="data/glove/acl/glove.pkl"
 GLOVE_EMBED_SIZE=100
 
 FASTTEXT_EMBEDDING_FILE="data/fasttext/wiki.en.vec"
