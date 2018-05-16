@@ -67,7 +67,10 @@ class ModelManager:
 
         self.saved_model_path = self.model_params['saved_model_folder']
 
-        self.sess = tf.Session()
+        config = tf.ConfigProto()
+        config.gpu_options.allow_growth = True
+
+        self.sess = tf.Session(config=config)
 
         self.recurrent_model.build_graph(self.input_pipeline)
 
