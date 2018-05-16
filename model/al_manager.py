@@ -119,6 +119,10 @@ class ActiveLearningModelManager(ModelManager):
 
     def select_samples(self):
         sample_size = self.active_learning_params['sample_size']
+
+        if sample_size >= self.unlabeled_dataset_id.shape[0]:
+            sample_size = self.unlabeled_dataset_id.shape[0] - 1
+
         pool_indexes = np.array(
             random.sample(range(0, self.unlabeled_dataset_id.shape[0]), sample_size)
         )
@@ -291,6 +295,10 @@ class CealModelManager(ActiveLearningModelManager):
 
     def select_samples(self):
         sample_size = self.active_learning_params['sample_size']
+
+        if sample_size >= self.unlabeled_dataset_id.shape[0]:
+            sample_size = self.unlabeled_dataset_id.shape[0] - 1
+
         pool_indexes = np.array(
             random.sample(range(0, self.unlabeled_dataset_id.shape[0]), sample_size)
         )
@@ -342,18 +350,20 @@ class CealModelManager(ActiveLearningModelManager):
         self.labeled_dataset = (labeled_id, labeled_labels, labeled_sizes)
         self.prev_dataset = self.labeled_dataset
 
-        certain_id = pool_ids[certain_samples]
+        if certain_samples.size:
+            certain_id = pool_ids[certain_samples]
 
-        labels = []
-        for i in certain_samples:
-            labels.append(all_preds[i].argmax())
-        certain_labels = np.array(labels)
+            labels = []
+            for i in certain_samples:
+                labels.append(all_preds[i].argmax())
+            certain_labels = np.array(labels)
 
-        certain_sizes = pool_sizes[certain_samples]
+            certain_sizes = pool_sizes[certain_samples]
 
-        labeled_id, labeled_labels, labeled_sizes = self.new_labeled_dataset(
-            certain_id, certain_labels, certain_sizes)
-        self.labeled_dataset = (labeled_id, labeled_labels, labeled_sizes)
+            labeled_id, labeled_labels, labeled_sizes = self.new_labeled_dataset(
+                certain_id, certain_labels, certain_sizes)
+            self.labeled_dataset = (labeled_id, labeled_labels, labeled_sizes)
+
         print('Original dataset size: {}'.format(len(self.prev_dataset[0])))
         print('Ceal dataset size: {}'.format(len(self.labeled_dataset[0])))
 
