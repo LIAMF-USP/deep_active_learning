@@ -146,10 +146,11 @@ class InputPipeline:
         with tf.Session() as sess:
             num_batches = 0
             sess.run(iterator.initializer)
+            next_batch = iterator.get_next()
 
             while True:
                 try:
-                    _, _, _ = sess.run(iterator.get_next())
+                    _, _, _ = sess.run(next_batch)
                     num_batches += 1
                 except tf.errors.OutOfRangeError:
                     break
