@@ -5,8 +5,8 @@ set -e
 #usage
 #./script/run_active_learning.sh
 
-AL_TRAIN_FILE="data/glove/acl/data/train/train.pkl"
-AL_TEST_FILE="data/glove/acl/data/test/test.pkl"
+AL_TRAIN_FILE="data/glove/subj/data/train/train.pkl"
+AL_TEST_FILE="data/glove/subj/data/test/test.pkl"
 
 SAVED_MODEL_FOLDER="saved_models"
 
@@ -17,12 +17,11 @@ MODEL_NAME='base_model'
 TENSORBOARD_DIR='tensorboard_logs'
 
 GLOVE_EMBEDDING_FILE="data/glove/glove.6B.100d.txt"
-GLOVE_EMBEDDING_PICKLE="data/glove/acl/glove.pkl"
+GLOVE_EMBEDDING_PICKLE="data/glove/subj/glove.pkl"
 GLOVE_EMBED_SIZE=100
 
 GRAPHS_DIR='graphs'
 
-NUM_EPOCHS=150
 NUM_CLASSES=2
 
 USE_VALIDATION=0
@@ -37,7 +36,6 @@ NUM_BUCKETS=30
 #Hyper-parameters
 LEARNING_RATE=0.001
 BATCH_SIZE=64
-NUM_UNITS=285
 RECURRENT_INPUT_DROPOUT=0.5
 RECURRENT_OUTPUT_DROPOUT=0.5
 RECURRENT_STATE_DROPOUT=0.5
@@ -47,18 +45,20 @@ CLIP_GRADIENTS=1
 MAX_NORM=5
 
 EMBED_SIZE="$GLOVE_EMBED_SIZE"
+MAX_LEN=20
 
 #Active Learning parameters
-NUM_ROUNDS=100
+NUM_UNITS=728
+NUM_EPOCHS=150
+NUM_ROUNDS=200
 SAMPLE_SIZE=2000
 NUM_QUERIES=10
-NUM_PASSES=100
-INITIAL_TRAINING_SIZE=225
-SAVE_DATA_FOLDER='data/active_learning'
-MAX_LEN=600
-
-ACTIVE_LEARNING_TYPE="ceal"
+NUM_PASSES=400
+INITIAL_TRAINING_SIZE=10
+ACTIVE_LEARNING_TYPE="common"
 UNCERTAINTY_METRIC="bald"
+
+SAVE_DATA_FOLDER='data/active_learning/bald_subj_n150_q10_u728_np400'
 
 for i in {1..3}
 do

@@ -295,9 +295,6 @@ def run_active_learning(**user_args):
     active_learning_graph(train_data, test_accuracies, save_graph_path)
 
     save_data_folder = user_args['save_data_folder']
-    uncertainty_metric = user_args['uncertainty_metric']
-
-    save_data_folder = os.path.join(save_data_folder, uncertainty_metric)
     if not os.path.exists(save_data_folder):
         os.makedirs(save_data_folder)
 
