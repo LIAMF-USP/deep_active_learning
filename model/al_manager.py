@@ -21,6 +21,7 @@ class ActiveLearningModelManager(ModelManager):
 
     def __init__(self, model_params, active_learning_params, verbose):
         self.active_learning_params = active_learning_params
+        self.round = 0
         super().__init__(model_params, verbose)
 
     def create_dataset(self):
@@ -142,6 +143,7 @@ class ActiveLearningModelManager(ModelManager):
 
         unlabeled_uncertainty = self.unlabeled_uncertainty(
             uncertainty_metric, pool_ids, pool_sizes, num_classes, num_passes)
+
         new_samples = unlabeled_uncertainty.argsort()[-num_queries:][::-1]
         np.random.shuffle(new_samples)
 
@@ -259,6 +261,8 @@ class ActiveLearningModelManager(ModelManager):
                 delete_labels, delete_labels_sample,
                 delete_sizes, delete_sizes_sample)
 
+            self.round = i
+
             print('End of round {}'.format(i))
             print('Size of pool {}'.format(self.unlabeled_dataset_id.shape[0]))
             print()
@@ -267,6 +271,13 @@ class ActiveLearningModelManager(ModelManager):
 
 
 class CealModelManager(ActiveLearningModelManager):
+
+    def __init__(self, model_params, active_learning_params, verbose):
+        super().__init__(model_params, active_learning_params, verbose)
+
+        self.alpha = 0.005
+        self.dr = 0.00001
+
     def create_initial_dataset(self):
         labeled_dataset, unlabeled_dataset, test_dataset = super().create_initial_dataset()
         self.prev_dataset = labeled_dataset
@@ -309,6 +320,12 @@ class CealModelManager(ActiveLearningModelManager):
 
         return (pool_ids, pool_labels, pool_sizes, pool_indexes)
 
+    def update_alpha(self):
+        if self.round == 0:
+            return self.alpha
+        else:
+            return self.alpha - (self.dr * self.round)
+
     def select_new_examples(self, pool_ids, pool_labels, pool_sizes):
         num_passes = self.active_learning_params['num_passes']
         num_queries = self.active_learning_params['num_queries']
@@ -323,7 +340,7 @@ class CealModelManager(ActiveLearningModelManager):
         certain_samples = []
         for index in unlabeled_uncertainty.argsort():
             value = unlabeled_uncertainty[index]
-            if value > 0.05:
+            if value > self.update_alpha():
                 break
 
             certain_samples.append(index)
