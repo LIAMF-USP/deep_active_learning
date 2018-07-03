@@ -17,6 +17,7 @@ class RecurrentConfig(Config):
         self.weight_decay = user_args['weight_decay']
         self.clip_gradients = user_args['clip_gradients']
         self.max_norm = user_args['max_norm']
+        self.max_len = user_args.get('max_len', 600)
 
 
 class RecurrentModel(SentimentAnalysisModel):
@@ -33,7 +34,7 @@ class RecurrentModel(SentimentAnalysisModel):
         self.embedding_dropout_placeholder = tf.placeholder(tf.float32)
 
         self.data_placeholder = tf.placeholder(
-            tf.int32, shape=[None, 600], name='data_placeholder')
+            tf.int32, shape=[None, self.config.max_len], name='data_placeholder')
         self.sizes_placeholder = tf.placeholder(
             tf.int32, shape=[None], name='sizes_placeholder')
         self.labels_placeholder = tf.placeholder(

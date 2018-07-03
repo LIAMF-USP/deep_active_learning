@@ -274,6 +274,7 @@ def run_active_learning(**user_args):
         'weight_decay': user_args['weight_decay'],
         'clip_gradients': user_args['clip_gradients'],
         'max_norm': user_args['max_norm'],
+        'max_len': user_args['max_len'],
         'bucket_width': user_args['bucket_width'],
         'num_buckets': user_args['num_buckets']
     }
