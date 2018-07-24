@@ -15,8 +15,8 @@ class RecurrentModelTest(tf.test.TestCase):
                       [7, 8, 9],
                       [10, 11, 12]]
 
-        Config = namedtuple('Config', ['num_units', 'num_classes', 'embed_size'])
-        config = Config(3, 2, 3)
+        Config = namedtuple('Config', ['num_units', 'num_classes', 'embed_size', 'max_len'])
+        config = Config(3, 2, 3, 3)
 
         recurrent_model = RecurrentModel(config, embeddings, verbose=False)
         recurrent_model.add_placeholder()
