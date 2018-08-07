@@ -49,6 +49,11 @@ def create_argparse():
                         type=str,
                         help='Graph name')
 
+    parser.add_argument('-ustd',
+                        '--use-standard-deviation',
+                        type=int,
+                        help='Use standard deviation in the graph')
+
     return parser
 
 
@@ -79,7 +84,7 @@ def final_accuracies(test_file, train_file, num_experiments):
     return final_accuracies, train_data, std_values
 
 
-def create_graph(metric_names, metric_accuracies, train_data, std_final, graph_save_path):
+def create_graph(metric_names, metric_accuracies, train_data, std_final, use_std, graph_save_path):
 
     for metric_name, metric_accuracy, std_values in zip(metric_names, metric_accuracies, std_final):
         plt.plot(train_data, metric_accuracy, label=metric_name)
@@ -87,7 +92,8 @@ def create_graph(metric_names, metric_accuracies, train_data, std_final, graph_s
         std_array = np.array(std_values)
         y = np.array(metric_accuracy)
 
-        plt.fill_between(train_data, y - std_array, y + std_array, alpha=0.5)
+        if use_std:
+            plt.fill_between(train_data, y - std_array, y + std_array, alpha=0.5)
 
     plt.legend(loc='lower right')
     plt.savefig(graph_save_path)
@@ -104,6 +110,8 @@ def make_comparison(user_args):
 
     test_file = metrics_accuracy_file + '_{}.pkl'
     train_file = num_data_file + '_{}.pkl'
+
+    use_std = True if user_args['use_standard_deviation'] == 1 else False
 
     metric_accuracies = []
     std_final = []
@@ -122,7 +130,8 @@ def make_comparison(user_args):
     graph_name = user_args['graph_name']
     graph_save_path = os.path.join(graph_path, graph_name)
 
-    create_graph(metric_names, metric_accuracies, train_data, std_final, graph_save_path)
+    create_graph(metric_names, metric_accuracies, train_data, std_final,
+            use_std, graph_save_path)
 
 
 def main():
