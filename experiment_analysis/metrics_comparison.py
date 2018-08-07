@@ -3,6 +3,7 @@ import pickle
 import os
 
 import matplotlib.pyplot as plt
+import numpy as np
 
 
 def create_argparse():
@@ -64,19 +65,29 @@ def final_accuracies(test_file, train_file, num_experiments):
         test_accuracies.append(load(test_file.format(index)))
 
     final_accuracies = []
+    std_values = []
+
     for a in zip(*test_accuracies):
         value = sum(a) / len(a)
+        std = np.std(a)
+
         final_accuracies.append(value)
+        std_values.append(std)
 
     train_data = load(train_file.format('1'))
 
-    return final_accuracies, train_data
+    return final_accuracies, train_data, std_values
 
 
-def create_graph(metric_names, metric_accuracies, train_data, graph_save_path):
+def create_graph(metric_names, metric_accuracies, train_data, std_final, graph_save_path):
 
-    for metric_name, metric_accuracy in zip(metric_names, metric_accuracies):
+    for metric_name, metric_accuracy, std_values in zip(metric_names, metric_accuracies, std_final):
         plt.plot(train_data, metric_accuracy, label=metric_name)
+
+        std_array = np.array(std_values)
+        y = np.array(metric_accuracy)
+
+        plt.fill_between(train_data, y - std_array, y + std_array, alpha=0.5)
 
     plt.legend(loc='lower right')
     plt.savefig(graph_save_path)
@@ -95,21 +106,23 @@ def make_comparison(user_args):
     train_file = num_data_file + '_{}.pkl'
 
     metric_accuracies = []
+    std_final = []
 
     for metric_name, metric_folder in zip(metric_names, metrics_folder):
         metric_file = os.path.join(data_folder, metric_folder, test_file)
         metric_train_file = os.path.join(data_folder, metric_folder, train_file)
 
-        metric_accuracy, train_data = final_accuracies(
+        metric_accuracy, train_data, std_values = final_accuracies(
             metric_file, metric_train_file, num_experiments)
 
         metric_accuracies.append(metric_accuracy)
+        std_final.append(std_values)
 
     graph_path = user_args['graph_path']
     graph_name = user_args['graph_name']
     graph_save_path = os.path.join(graph_path, graph_name)
 
-    create_graph(metric_names, metric_accuracies, train_data, graph_save_path)
+    create_graph(metric_names, metric_accuracies, train_data, std_final, graph_save_path)
 
 
 def main():
