@@ -131,7 +131,7 @@ def make_comparison(user_args):
     graph_save_path = os.path.join(graph_path, graph_name)
 
     create_graph(metric_names, metric_accuracies, train_data, std_final,
-            use_std, graph_save_path)
+                 use_std, graph_save_path)
 
 
 def main():
